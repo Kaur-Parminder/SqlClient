@@ -72,7 +72,9 @@ namespace Microsoft.Data.SqlClient
     internal partial class SqlClientEventSource : SqlClientEventSourceBase
     {
         // Defines the singleton instance for the Resources ETW provider
-        internal static readonly SqlClientEventSource Log = new SqlClientEventSource();
+        internal static readonly SqlClientEventSource Log = new();
+
+        private SqlClientEventSource() { }
 
         private const string NullStr = "null";
         private const string SqlCommand_ClassName = nameof(SqlCommand);
@@ -1126,5 +1128,28 @@ namespace Microsoft.Data.SqlClient
         {
             return new TrySNIEventScope(SqlClientEventSource.Log.TrySNIScopeEnterEvent(message, memberName));
         }
+    }
+
+    internal readonly ref struct TryEventScope //: IDisposable
+    {
+        private readonly long _scopeId;
+
+        public TryEventScope(long scopeID) => _scopeId = scopeID;
+
+        public void Dispose()
+        {
+            if (_scopeId != 0)
+            {
+                SqlClientEventSource.Log.TryScopeLeaveEvent(_scopeId);
+            }
+        }
+
+        public static TryEventScope Create<T0>(string message, T0 args0) => new TryEventScope(SqlClientEventSource.Log.TryScopeEnterEvent(message, args0));
+
+        public static TryEventScope Create<T0, T1>(string message, T0 args0, T1 args1) => new TryEventScope(SqlClientEventSource.Log.TryScopeEnterEvent(message, args0, args1));
+
+        public static TryEventScope Create(string className, [System.Runtime.CompilerServices.CallerMemberName] string memberName = "") => new TryEventScope(SqlClientEventSource.Log.TryScopeEnterEvent(className, memberName));
+
+        public static TryEventScope Create(long scopeId) => new TryEventScope(scopeId);
     }
 }

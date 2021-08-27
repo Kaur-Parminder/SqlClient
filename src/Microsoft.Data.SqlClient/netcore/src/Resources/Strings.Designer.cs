@@ -1420,15 +1420,6 @@ namespace System {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Microsoft.Data.SqlClient is not supported on this platform..
-        /// </summary>
-        internal static string PlatformNotSupported_DataSqlClient {
-            get {
-                return ResourceManager.GetString("PlatformNotSupported_DataSqlClient", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Security Warning: The negotiated {0} is an insecure protocol and is supported for backward compatibility only. The recommended protocol version is TLS 1.2 and later..
         /// </summary>
         internal static string SEC_ProtocolWarning {
@@ -2833,7 +2824,7 @@ namespace System {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Error code 0x{0}; state {1}.
+        ///   Looks up a localized string similar to Error code 0x{0}..
         /// </summary>
         internal static string SQL_MSALInnerException {
             get {
