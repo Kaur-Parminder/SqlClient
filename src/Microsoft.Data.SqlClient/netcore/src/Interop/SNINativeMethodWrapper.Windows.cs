@@ -242,6 +242,15 @@ namespace Microsoft.Data.SqlClient
         [DllImport(SNI, CallingConvention = CallingConvention.Cdecl)]
         internal static extern uint SNITerminate();
 
+        [DllImport(SNI, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SNIServerEnumOpenWrapper")]
+        internal static extern IntPtr SNIServerEnumOpen();
+
+        [DllImport(SNI, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SNIServerEnumCloseWrapper")]
+        internal static extern void SNIServerEnumClose([In] IntPtr packet);
+
+        [DllImport(SNI, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SNIServerEnumReadWrapper")]
+        internal static extern int SNIServerEnumRead([In] IntPtr packet, [In, Out] char[] readBuffer, int bufferLength, ref bool more);
+
         [DllImport(SNI, CallingConvention = CallingConvention.Cdecl, EntryPoint = "SNIWaitForSSLHandshakeToCompleteWrapper")]
         internal static extern uint SNIWaitForSSLHandshakeToComplete([In] SNIHandle pConn, int dwMilliseconds, out uint pProtocolVersion);
 
@@ -312,7 +321,7 @@ namespace Microsoft.Data.SqlClient
         {
             return SNIGetInfoWrapper(pConn, QTypes.SNI_QUERY_CONN_CONNID, out connId);
         }
-       
+
         internal static uint SniGetProviderNumber(SNIHandle pConn, ref ProviderEnum provNum)
         {
             return SNIGetInfoWrapper(pConn, QTypes.SNI_QUERY_CONN_PROVIDERNUM, out provNum);
