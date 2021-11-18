@@ -72,13 +72,10 @@ namespace Microsoft.Data.Sql
             {
                 timeoutTime = TdsParserStaticMethods.GetTimeoutSeconds(timeoutSeconds);
                 RuntimeHelpers.PrepareConstrainedRegions();
-                try { }
+                try
+                { }
                 finally
                 {
-                 
-                    SqlClientEventSource.Log.TryTraceEvent("<prov.SqlDataSourceEnumerator.DataSources readlength {0} , buffersize {1}>", timeoutSeconds, readLength);
-
-                    SqlClientEventSource.Log.TryTraceEvent("Testing");
                     handle = SNINativeMethodWrapper.SNIServerEnumOpen();
                 }
 
@@ -87,10 +84,6 @@ namespace Microsoft.Data.Sql
                     while (more && !TdsParserStaticMethods.TimeoutHasExpired(timeoutTime))
                     {
                         readLength = SNINativeMethodWrapper.SNIServerEnumRead(handle, buffer, bufferSize, ref more);
-                        Console.WriteLine("readLength= " + readLength);
-                        Console.WriteLine("BufferSize" + bufferSize);
-                        bool test = SqlClientEventSource.Log.IsTraceEnabled();
-                        SqlClientEventSource.Log.TryTraceEvent("<prov.SqlDataSourceEnumerator.DataSources readlength {0} , buffersize {1}>",readLength,bufferSize);
 
                         if (readLength > bufferSize)
                         {
@@ -99,11 +92,7 @@ namespace Microsoft.Data.Sql
                         }
                         else if (0 < readLength)
                         {
-                            bool test1 = SqlClientEventSource.Log.IsTraceEnabled();
-                            SqlClientEventSource.Log.TryTraceEvent("<sc.SqlDataSourceEnumerator.DataSources>");
-
                             strbldr.Append(buffer, 0, readLength);
-                            Console.WriteLine("strbuilder" + strbldr.ToString());
                         }
                     }
                 }
@@ -119,7 +108,7 @@ namespace Microsoft.Data.Sql
             if (failure)
             {
                 Debug.Assert(false, "GetDataSources:SNIServerEnumRead returned bad length");
-                //Bid.Trace("<sc.SqlDataSourceEnumerator.GetDataSources|ERR> GetDataSources:SNIServerEnumRead returned bad length, requested %d, received %d", bufferSize, readLength);
+                SqlClientEventSource.Log.TryTraceEvent("<sc.SqlDataSourceEnumerator.GetDataSources|ERR> GetDataSources:SNIServerEnumRead returned bad length, requested %d, received %d", bufferSize, readLength);
                 throw ADP.ArgumentOutOfRange("readLength");
             }
 
@@ -131,7 +120,7 @@ namespace Microsoft.Data.Sql
         private static int _clusterLength = _Cluster.Length;
         private static int _versionLength = _Version.Length;
 
-        static private DataTable ParseServerEnumString(string serverInstances)
+        static private System.Data.DataTable ParseServerEnumString(string serverInstances)
         {
             DataTable dataTable = new DataTable("SqlDataSources");
             dataTable.Locale = CultureInfo.InvariantCulture;
@@ -145,14 +134,13 @@ namespace Microsoft.Data.Sql
             string isClustered = null;
             string version = null;
 
-            serverInstances = serverInstances.Replace(" ", "");
             // Every row comes in the format "serverName\instanceName;Clustered:[Yes|No];Version:.." 
             // Every row is terminated by a null character.
             // Process one row at a time
-            Console.WriteLine("serverInstances = " + serverInstances);
-            foreach (string instance in serverInstances.Split('\0'))
+            foreach (string instance in serverInstances.Split(new string[] { "\0\0\0" }, StringSplitOptions.None))
             {
-                string value = instance.Trim('\0'); // MDAC 91934
+                //  string value = instance.Trim('\0'); // MDAC 91934
+                string value = instance.Replace("\0", "");
                 if (0 == value.Length)
                 {
                     continue;
@@ -213,92 +201,5 @@ namespace Microsoft.Data.Sql
             return dataTable;
         }
 
-        //static private DataTable ParseServerEnumString(string serverInstances)
-        //{
-        //    DataTable dataTable = new DataTable("SqlDataSources");
-        //    dataTable.Locale = CultureInfo.InvariantCulture;
-        //    dataTable.Columns.Add(ServerName, typeof(string));
-        //    dataTable.Columns.Add(InstanceName, typeof(string));
-        //    dataTable.Columns.Add(IsClustered, typeof(string));
-        //    dataTable.Columns.Add(Version, typeof(string));
-        //    DataRow dataRow = null;
-        //    string serverName = null;
-        //    string instanceName = null;
-        //    string isClustered = null;
-        //    string version = null;
-        //    Console.WriteLine(" serverInstances = " + serverInstances);
-
-        //    //serverInstances.Trim();
-        //    // Every row comes in the format "serverName\instanceName;Clustered:[Yes|No];Version:.." 
-        //    // Every row is terminated by a null character.
-        //    // Process one row at a time
-        //    serverInstances = "A D O - C - W 1 0 - V S 1 7 \\ S Q L E X P R E S S ; C l u s t e r e d : N o ; V e r s i o n : 1 5 . 0 . 2 0 0 0 . 5   A D O - C - W 1 0 - V S 1 7 \\ S Q L E X P R E S S ; C l u s t e r e d : N o ; V e r s i o n : 1 5 . 0 . 2 0 0 0 . 5";
-        //   serverInstances = serverInstances.Replace(" ", "");
-        //    foreach (string instance in serverInstances.Split('\0'))
-        //    {
-        //        Console.WriteLine( " instance = " + instance);
-        //        string value = instance.Trim('\0'); // MDAC 91934
-        //        Console.WriteLine(" value = " + value);
-        //        Console.WriteLine(" value length = " + value.Length);
-        //        if (0 == value.Length)
-        //        {
-        //            continue;
-        //        }
-        //        foreach (string instance2 in value.Split(';'))
-        //        {
-        //            if (serverName == null)
-        //            {
-        //                foreach (string instance3 in instance2.Split('\\'))
-        //                {
-        //                    if (serverName == null)
-        //                    {
-        //                        serverName = instance3;
-        //                        continue;
-        //                    }
-        //                    Debug.Assert(instanceName == null);
-        //                    instanceName = instance3;
-        //                }
-        //                continue;
-        //            }
-        //            if (isClustered == null)
-        //            {
-        //                Console.WriteLine(_Cluster + " instance2 = "+instance2 + _clusterLength);
-        //                Debug.Assert(String.Compare(_Cluster, 0, instance2, 0, _clusterLength, StringComparison.OrdinalIgnoreCase) == 0);
-        //                isClustered = instance2.Substring(_clusterLength);
-        //                continue;
-        //            }
-        //            Debug.Assert(version == null);
-        //            Debug.Assert(String.Compare(_Version, 0, instance2, 0, _versionLength, StringComparison.OrdinalIgnoreCase) == 0);
-        //            version = instance2.Substring(_versionLength);
-        //        }
-
-        //        string query = "ServerName='" + serverName + "'";
-
-        //        if (!ADP.IsEmpty(instanceName))
-        //        { // SQL BU DT 20006584: only append instanceName if present.
-        //            query += " AND InstanceName='" + instanceName + "'";
-        //        }
-
-        //        // SNI returns dupes - do not add them.  SQL BU DT 290323
-        //        if (dataTable.Select(query).Length == 0)
-        //        {
-        //            dataRow = dataTable.NewRow();
-        //            dataRow[0] = serverName;
-        //            dataRow[1] = instanceName;
-        //            dataRow[2] = isClustered;
-        //            dataRow[3] = version;
-        //            dataTable.Rows.Add(dataRow);
-        //        }
-        //        serverName = null;
-        //        instanceName = null;
-        //        isClustered = null;
-        //        version = null;
-        //    }
-        //    foreach (DataColumn column in dataTable.Columns)
-        //    {
-        //        column.ReadOnly = true;
-        //    }
-        //    return dataTable;
-        //}
     }
 }

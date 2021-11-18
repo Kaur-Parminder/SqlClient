@@ -762,9 +762,14 @@ namespace Microsoft.Data.SqlClient
 
         internal static IntPtr SNIServerEnumOpen()
         {
-            // return s_is64bitProcess ?
-           //return SNINativeManagedWrapperX64.SNIServerEnumOpen();// :
-             return SNINativeManagedWrapperX86.SNIServerEnumOpen();
+            if (s_is64bitProcess)
+            {
+                return SNINativeManagedWrapperX64.SNIServerEnumOpen();
+            }
+            else
+            {
+                return SNINativeManagedWrapperX86.SNIServerEnumOpen();
+            }
         }
 
         internal static void SNIServerEnumClose([In] IntPtr packet)
