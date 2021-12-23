@@ -23,9 +23,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsFileStreamEnvironmentSet), nameof(IsIntegratedSecurityEnvironmentSet), nameof(AreConnectionStringsSetup))]
         public static void ReadFilestream()
         {
-            try
-            {
-                string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
+            string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
                     InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
                 }.ConnectionString;
@@ -38,54 +36,58 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     byte[] retrievedValue;
                     using (SqlTransaction transaction = connection.BeginTransaction())
                     {
-                        using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
+                        try
                         {
-                            try
+                            using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
                             {
-                                //SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
-                                //command.Transaction = transaction;
-
-                                using (SqlDataReader reader = command.ExecuteReader())
+                                try
                                 {
-                                    while (reader.Read())
+                                    //SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                                    //command.Transaction = transaction;
+
+                                    using (SqlDataReader reader = command.ExecuteReader())
                                     {
-                                        // Get the pointer for the file.
-                                        string path = reader.GetString(0);
-                                        byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
-
-                                        // Create the SqlFileStream  
-                                        using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
+                                        while (reader.Read())
                                         {
-                                            // Read the contents as bytes.
-                                            retrievedValue = new byte[fileStream.Length];
-                                            fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
+                                            // Get the pointer for the file.
+                                            string path = reader.GetString(0);
+                                            byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                                            // Reverse the byte array, if the system architecture is little-endian.
-                                            if (BitConverter.IsLittleEndian)
-                                                Array.Reverse(retrievedValue);
+                                            // Create the SqlFileStream  
+                                            using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
+                                            {
+                                                // Read the contents as bytes.
+                                                retrievedValue = new byte[fileStream.Length];
+                                                fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
 
-                                            // Compare inserted and retrieved values.
-                                            Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
+                                                // Reverse the byte array, if the system architecture is little-endian.
+                                                if (BitConverter.IsLittleEndian)
+                                                    Array.Reverse(retrievedValue);
+
+                                                // Compare inserted and retrieved values.
+                                                Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
+                                            }
+                                            nRow++;
                                         }
-                                        nRow++;
-                                    }
 
+                                    }
+                                    transaction.Commit();
                                 }
-                                transaction.Commit();
+                                finally
+                                {
+                                    // Drop Table
+                                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
+                                }
                             }
-                            finally
-                            {
-                                // Drop Table
-                                ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
-                            }
+                        }
+                        finally
+                        {
+                            DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString,transaction);
                         }
                     }
                 }
-            }
-            finally
-            {
-                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
-            }
+            
+          
         }
 
         [PlatformSpecific(TestPlatforms.Windows)]
@@ -142,7 +144,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             finally
             {
-                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
+                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString,null);
             }
         }
 
@@ -207,7 +209,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             finally
             {
-                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
+                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString,null);
             }
         }
 
@@ -251,13 +253,13 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             return s_fileStreamDBName;
         }
 
-        private static void DropFileStreamDb(ref string fileStreamDir, string connString)
+        private static void DropFileStreamDb(ref string fileStreamDir, string connString,SqlTransaction transaction)
         {
             try
             {
                 using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" }.ConnectionString);
                 con.Open();
-                DataTestUtility.DropDatabase(con, s_fileStreamDBName);
+                DataTestUtility.DropDatabase(con, s_fileStreamDBName,transaction);
                 s_fileStreamDBName = null;
             }
             catch (SqlException e)

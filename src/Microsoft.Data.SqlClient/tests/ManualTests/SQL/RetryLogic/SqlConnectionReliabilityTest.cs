@@ -91,7 +91,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     finally
                     {
                         createDBTask?.Wait();
-                        DataTestUtility.DropDatabase(cnn1, database);
+                        DataTestUtility.DropDatabase(cnn1, database,null);
                     }
                 }
             }
