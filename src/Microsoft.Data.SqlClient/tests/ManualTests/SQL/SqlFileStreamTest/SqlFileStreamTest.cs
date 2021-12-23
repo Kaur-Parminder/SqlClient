@@ -30,49 +30,56 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
                 }.ConnectionString;
 
-                using SqlConnection connection = new(connString);
-                connection.Open();
-                string tempTable = SetupTable(connection);
-                int nRow = 0;
-                byte[] retrievedValue;
-                SqlCommand command = new($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection);
-                try
+                using (SqlConnection connection = new(connString))
                 {
-                    SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
-                    command.Transaction = transaction;
-
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    connection.Open();
+                    string tempTable = SetupTable(connection);
+                    int nRow = 0;
+                    byte[] retrievedValue;
+                    using (SqlTransaction transaction = connection.BeginTransaction())
                     {
-                        while (reader.Read())
+                        using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
                         {
-                            // Get the pointer for the file.
-                            string path = reader.GetString(0);
-                            byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
-
-                            // Create the SqlFileStream  
-                            using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
+                            try
                             {
-                                // Read the contents as bytes.
-                                retrievedValue = new byte[fileStream.Length];
-                                fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
+                                //SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                                //command.Transaction = transaction;
 
-                                // Reverse the byte array, if the system architecture is little-endian.
-                                if (BitConverter.IsLittleEndian)
-                                    Array.Reverse(retrievedValue);
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        // Get the pointer for the file.
+                                        string path = reader.GetString(0);
+                                        byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                                // Compare inserted and retrieved values.
-                                Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
+                                        // Create the SqlFileStream  
+                                        using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
+                                        {
+                                            // Read the contents as bytes.
+                                            retrievedValue = new byte[fileStream.Length];
+                                            fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
+
+                                            // Reverse the byte array, if the system architecture is little-endian.
+                                            if (BitConverter.IsLittleEndian)
+                                                Array.Reverse(retrievedValue);
+
+                                            // Compare inserted and retrieved values.
+                                            Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
+                                        }
+                                        nRow++;
+                                    }
+
+                                }
+                                transaction.Commit();
                             }
-                            nRow++;
+                            finally
+                            {
+                                // Drop Table
+                                ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
+                            }
                         }
-
                     }
-                    transaction.Commit();
-                }
-                finally
-                {
-                    // Drop Table
-                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
                 }
             }
             finally
