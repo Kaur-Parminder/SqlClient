@@ -290,7 +290,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 finally
                 {
                     // additional try to drop the database if it still exists.
-                    DataTestUtility.DropDatabase(cnn1, database,null);
+                    DataTestUtility.DropDatabase(cnn1, database);
                 }
             }
         }
