@@ -450,13 +450,8 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         /// <param name="dbName">Database name without brackets.</param>
         public static void DropDatabase(SqlConnection sqlConnection, string dbName)
         {
-            using (SqlTransaction transaction = sqlConnection.BeginTransaction())
-            {
-
-                using SqlCommand cmd = new(string.Format("IF (EXISTS(SELECT 1 FROM sys.databases WHERE name = '{0}')) \nBEGIN \n ALTER DATABASE [{0}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE \n DROP DATABASE [{0}] \nEND", dbName), sqlConnection, transaction);
+                using SqlCommand cmd = new(string.Format("IF (EXISTS(SELECT 1 FROM sys.databases WHERE name = '{0}')) \nBEGIN \n ALTER DATABASE [{0}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE \n DROP DATABASE [{0}] \nEND", dbName), sqlConnection);
                 cmd.ExecuteNonQuery();
-                transaction.Commit();
-            }
         }
 
         public static bool IsLocalDBInstalled() => !string.IsNullOrEmpty(LocalDbAppName?.Trim()) && IsIntegratedSecuritySetup();
