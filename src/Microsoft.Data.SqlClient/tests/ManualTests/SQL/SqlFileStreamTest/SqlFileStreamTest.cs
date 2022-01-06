@@ -48,6 +48,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                 {
                                     // Get the pointer for the file.
                                     string path = reader.GetString(0);
+                                    Console.WriteLine(path);
                                     byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
                                     // Create the SqlFileStream  
