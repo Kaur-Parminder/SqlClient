@@ -52,7 +52,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                     byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
                                     // Create the SqlFileStream  
-                                    using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
+                                    using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0))
                                     {
                                         // Read the contents as bytes.
                                         retrievedValue = new byte[fileStream.Length];
