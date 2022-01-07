@@ -158,8 +158,6 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                        ,IntegratedSecurity = true
                 }.ConnectionString;
 
-                using SqlConnection connection = new(connString);
-                connection.Open();
                 string tempTable = SetupTable(connString);
 
                 byte[] insertedValue = BitConverter.GetBytes(s_insertedValues[0]);
@@ -171,31 +169,38 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     Array.Reverse(insertedValue);
 
                 try
-                {                 
-                    SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
-                    using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
+                {
+                    using SqlConnection connection = new(connString);
                     {
-                        using (SqlDataReader reader = command.ExecuteReader())
+                        connection.Open();
+
+                        using (SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
                         {
-                            while (reader.Read())
+                            using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
                             {
-                                // Get the pointer for file  
-                                string path = reader.GetString(0);
-                                byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
+                                using (SqlDataReader reader = command.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        // Get the pointer for file  
+                                        string path = reader.GetString(0);
+                                        byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                                using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
-                                // Seek to the end of the file  
-                                fileStream.Seek(0, SeekOrigin.End);
+                                        using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
+                                        // Seek to the end of the file  
+                                        fileStream.Seek(0, SeekOrigin.End);
 
-                                // Append a single byte   
-                                fileStream.WriteByte(appendedByte);
+                                        // Append a single byte   
+                                        fileStream.WriteByte(appendedByte);
+                                    }
+                                }
+                                transaction.Commit();
+
+                                // Compare inserted and retrieved value
+                                byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
+                                Assert.Equal(insertedValue, retrievedValue);
                             }
                         }
-                        transaction.Commit();
-
-                        // Compare inserted and retrieved value
-                        byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
-                        Assert.Equal(insertedValue, retrievedValue);
                     }
                 }
                 finally
