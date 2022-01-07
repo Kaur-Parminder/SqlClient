@@ -26,10 +26,12 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
                     InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
+                    ,IntegratedSecurity =true
                 }.ConnectionString;
 
                 using (SqlConnection connection = new(connString))
                 {
+              
                     connection.Open();
                     string tempTable = SetupTable(connection);
                     int nRow = 0;
@@ -235,7 +237,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                          LOG ON
                                           (NAME = PhotoLibrary_log,
                                            FILENAME = '{fileStreamDir}PhotoLibrary_log.ldf')";
-                    using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" , IntegratedSecurity = true, TrustServerCertificate= true }.ConnectionString);
+                    using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" , IntegratedSecurity = true }.ConnectionString);
                     con.Open();
                     using SqlCommand cmd = con.CreateCommand();
                     cmd.CommandText = createDBQuery;
