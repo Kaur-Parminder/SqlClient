@@ -33,7 +33,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 {
               
                     connection.Open();
-                    string tempTable = SetupTable(connection);
+                    string tempTable = SetupTable(connString);
                     int nRow = 0;
                     byte[] retrievedValue;
 
@@ -77,13 +77,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     }
                 }
                 finally
-                {
-                    
+                {                    
                         ExecuteNonQueryCommand($"DROP TABLE {tempTable}",connString);
-                    
-
-                        DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
-                    
+                        DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);                    
                 }
                     
                 }
@@ -104,7 +100,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
                 using SqlConnection connection = new(connString);
                 connection.Open();
-                string tempTable = SetupTable(connection);
+                string tempTable = SetupTable(connString);
                 byte[] insertedValue = BitConverter.GetBytes(3);
 
                 // Reverse the byte array, if the system architecture is little-endian.
@@ -140,7 +136,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 finally
                 {
                     // Drop Table
-                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection.ConnectionString);
+                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connString);
                 }
             }
             finally
@@ -162,7 +158,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
                 using SqlConnection connection = new(connString);
                 connection.Open();
-                string tempTable = SetupTable(connection);
+                string tempTable = SetupTable(connString);
 
                 byte[] insertedValue = BitConverter.GetBytes(s_insertedValues[0]);
                 byte appendedByte = 0x04;
@@ -272,22 +268,25 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
         }
 
-        private static string SetupTable(SqlConnection conn)
+        private static string SetupTable(string connString)
         {
+
             // Generate random table name
             string tempTable = "fs_" + Guid.NewGuid().ToString().Replace('-', '_');
 
             // Create table
             string createTable = $"CREATE TABLE {tempTable} (EmployeeId INT  NOT NULL  PRIMARY KEY, Photo VARBINARY(MAX) FILESTREAM  NULL, RowGuid UNIQUEIDENTIFIER NOT NULL ROWGUIDCOL UNIQUE DEFAULT NEWID() ) ";
-            ExecuteNonQueryCommand(createTable, conn.ConnectionString);
-
-            // Insert data into created table
-            for (int i = 0; i < s_insertedValues.Length; i++)
+            using (SqlConnection conn = new SqlConnection(connString))
             {
-                string prepTable = $"INSERT INTO {tempTable} VALUES ({i + 1}, {s_insertedValues[i]} , default)";
-                ExecuteNonQueryCommand(prepTable, conn.ConnectionString);
-            }
+                ExecuteNonQueryCommand(createTable, connString);
 
+                // Insert data into created table
+                for (int i = 0; i < s_insertedValues.Length; i++)
+                {
+                    string prepTable = $"INSERT INTO {tempTable} VALUES ({i + 1}, {s_insertedValues[i]} , default)";
+                    ExecuteNonQueryCommand(prepTable, connString);
+                }
+            }
             return tempTable;
         }
 
