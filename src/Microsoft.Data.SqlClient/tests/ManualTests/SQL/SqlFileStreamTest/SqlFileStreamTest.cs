@@ -235,7 +235,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                          LOG ON
                                           (NAME = PhotoLibrary_log,
                                            FILENAME = '{fileStreamDir}PhotoLibrary_log.ldf')";
-                    using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" , IntegratedSecurity = true }.ConnectionString);
+                    using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" , IntegratedSecurity = true, TrustServerCertificate= true }.ConnectionString);
                     con.Open();
                     using SqlCommand cmd = con.CreateCommand();
                     cmd.CommandText = createDBQuery;
