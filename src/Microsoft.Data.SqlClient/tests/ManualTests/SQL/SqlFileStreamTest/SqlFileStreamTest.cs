@@ -171,34 +171,32 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     Array.Reverse(insertedValue);
 
                 try
-                {
-                    SqlCommand command = new($"SELECT TOP(1) Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection);
-
+                {                 
                     SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
-                    command.Transaction = transaction;
-
-                    using (SqlDataReader reader = command.ExecuteReader())
+                    using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
                     {
-                        while (reader.Read())
+                        using (SqlDataReader reader = command.ExecuteReader())
                         {
-                            // Get the pointer for file  
-                            string path = reader.GetString(0);
-                            byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
+                            while (reader.Read())
+                            {
+                                // Get the pointer for file  
+                                string path = reader.GetString(0);
+                                byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                            using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
-                            // Seek to the end of the file  
-                            fileStream.Seek(0, SeekOrigin.End);
+                                using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
+                                // Seek to the end of the file  
+                                fileStream.Seek(0, SeekOrigin.End);
 
-                            // Append a single byte   
-                            fileStream.WriteByte(appendedByte);
+                                // Append a single byte   
+                                fileStream.WriteByte(appendedByte);
+                            }
                         }
+                        transaction.Commit();
+
+                        // Compare inserted and retrieved value
+                        byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
+                        Assert.Equal(insertedValue, retrievedValue);
                     }
-                    transaction.Commit();
-
-                    // Compare inserted and retrieved value
-                    byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
-                    Assert.Equal(insertedValue, retrievedValue);
-
                 }
                 finally
                 {
