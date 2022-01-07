@@ -78,11 +78,12 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 }
                 finally
                 {
+                    
+                        ExecuteNonQueryCommand($"DROP TABLE {tempTable}",connString);
+                    
 
-                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
-
-                    DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
-
+                        DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
+                    
                 }
                     
                 }
@@ -139,7 +140,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 finally
                 {
                     // Drop Table
-                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
+                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection.ConnectionString);
                 }
             }
             finally
@@ -204,7 +205,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 finally
                 {
                     // Drop Table
-                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connection);
+                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connString);
                 }
             }
             finally
@@ -278,27 +279,27 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
             // Create table
             string createTable = $"CREATE TABLE {tempTable} (EmployeeId INT  NOT NULL  PRIMARY KEY, Photo VARBINARY(MAX) FILESTREAM  NULL, RowGuid UNIQUEIDENTIFIER NOT NULL ROWGUIDCOL UNIQUE DEFAULT NEWID() ) ";
-            ExecuteNonQueryCommand(createTable, conn);
+            ExecuteNonQueryCommand(createTable, conn.ConnectionString);
 
             // Insert data into created table
             for (int i = 0; i < s_insertedValues.Length; i++)
             {
                 string prepTable = $"INSERT INTO {tempTable} VALUES ({i + 1}, {s_insertedValues[i]} , default)";
-                ExecuteNonQueryCommand(prepTable, conn);
+                ExecuteNonQueryCommand(prepTable, conn.ConnectionString);
             }
 
             return tempTable;
         }
 
-        private static void ExecuteNonQueryCommand(string cmdText, SqlConnection conn)
+        private static void ExecuteNonQueryCommand(string cmdText, string connString)
         {
-            using (SqlTransaction transaction = conn.BeginTransaction())
+            using (SqlConnection conn = new(connString))
             {
+                conn.Open();
 
-                using SqlCommand cmd = new SqlCommand(cmdText,conn,transaction);
+                using SqlCommand cmd = new SqlCommand(cmdText,conn);
                 cmd.CommandText = cmdText;
                 cmd.ExecuteNonQuery();
-                transaction.Commit();
             }
         }
 
