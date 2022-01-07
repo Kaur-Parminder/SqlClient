@@ -131,7 +131,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     transaction.Commit();
 
                     // Compare inserted and retrieved value
-                    byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
+                    byte[] retrievedValue = RetrieveData(tempTable, connString, insertedValue.Length);
                     Assert.Equal(insertedValue, retrievedValue);
                 }
                 finally
@@ -174,7 +174,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     {
                         connection.Open();
 
-                        using (SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted))
+                        using (SqlTransaction transaction = connection.BeginTransaction())
                         {
                             using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
                             {
@@ -197,7 +197,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                 transaction.Commit();
 
                                 // Compare inserted and retrieved value
-                                byte[] retrievedValue = RetrieveData(tempTable, connection, insertedValue.Length);
+                                byte[] retrievedValue = RetrieveData(tempTable, connString, insertedValue.Length);
                                 Assert.Equal(insertedValue, retrievedValue);
                             }
                         }
@@ -307,14 +307,20 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
         }
 
-        private static byte[] RetrieveData(string tempTable, SqlConnection conn, int len)
+        private static byte[] RetrieveData(string tempTable, string connString, int len)
         {
-            SqlCommand command = new($"SELECT TOP(1) Photo FROM {tempTable}", conn);
             byte[] bArray = new byte[len];
-            using (SqlDataReader reader = command.ExecuteReader())
+
+            using (SqlConnection conn = new(connString))
             {
-                reader.Read();
-                reader.GetBytes(0, 0, bArray, 0, len);
+                conn.Open();
+
+                SqlCommand command = new($"SELECT TOP(1) Photo FROM {tempTable}", conn);
+                using (SqlDataReader reader = command.ExecuteReader())
+                {
+                    reader.Read();
+                    reader.GetBytes(0, 0, bArray, 0, len);
+                }
             }
             return bArray;
         }
