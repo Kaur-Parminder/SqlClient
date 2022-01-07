@@ -96,6 +96,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
                     InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
+                     ,IntegratedSecurity = true
                 }.ConnectionString;
 
                 using SqlConnection connection = new(connString);
@@ -154,6 +155,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
                     InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
+                       ,IntegratedSecurity = true
                 }.ConnectionString;
 
                 using SqlConnection connection = new(connString);
