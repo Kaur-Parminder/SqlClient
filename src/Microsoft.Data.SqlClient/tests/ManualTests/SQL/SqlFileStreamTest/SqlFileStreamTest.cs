@@ -23,68 +23,64 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsFileStreamEnvironmentSet), nameof(IsIntegratedSecurityEnvironmentSet), nameof(AreConnectionStringsSetup))]
         public static void ReadFilestream()
         {
-            string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
+            try
+            {
+                string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
-                    InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
-                    ,IntegratedSecurity =true
+                    InitialCatalog = SetupFileStreamDB(),
+                    IntegratedSecurity = true
                 }.ConnectionString;
 
-                using (SqlConnection connection = new(connString))
-                {
-              
-                    connection.Open();
-                    string tempTable = SetupTable(connString);
-                    int nRow = 0;
-                    byte[] retrievedValue;
-
+                string tempTable = SetupTable(connString);
+                int nRow = 0;
+                byte[] retrievedValue;
+                using SqlConnection connection = new(connString);
+                connection.Open();
+                SqlCommand command = new($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection);
                 try
                 {
-                    using (SqlTransaction transaction = connection.BeginTransaction())
+
+                    SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                    command.Transaction = transaction;
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
+                        while (reader.Read())
                         {
+                            // Get the pointer for the file.
+                            string path = reader.GetString(0);
+                            byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                            using (SqlDataReader reader = command.ExecuteReader())
+                            // Create the SqlFileStream  
+                            using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.Read, FileOptions.SequentialScan, allocationSize: 0))
                             {
-                                while (reader.Read())
-                                {
-                                    // Get the pointer for the file.
-                                    string path = reader.GetString(0);
-                                  //  Assert.Equal("", path);
-                                    byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
+                                // Read the contents as bytes.
+                                retrievedValue = new byte[fileStream.Length];
+                                fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
 
-                                    // Create the SqlFileStream  
-                                    using (Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0))
-                                    {
-                                        // Read the contents as bytes.
-                                        retrievedValue = new byte[fileStream.Length];
-                                        fileStream.Read(retrievedValue, 0, (int)(fileStream.Length));
+                                // Reverse the byte array, if the system architecture is little-endian.
+                                if (BitConverter.IsLittleEndian)
+                                    Array.Reverse(retrievedValue);
 
-                                        // Reverse the byte array, if the system architecture is little-endian.
-                                        if (BitConverter.IsLittleEndian)
-                                            Array.Reverse(retrievedValue);
-
-                                        // Compare inserted and retrieved values.
-                                        Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
-                                    }
-                                    nRow++;
-                                }
-
+                                // Compare inserted and retrieved values.
+                                Assert.Equal(s_insertedValues[nRow], BitConverter.ToInt32(retrievedValue, 0));
                             }
-                            transaction.Commit();
-
+                            nRow++;
                         }
+
                     }
+                    transaction.Commit();
                 }
                 finally
-                {                    
-                        ExecuteNonQueryCommand($"DROP TABLE {tempTable}",connString);
-                        DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);                    
+                {
+                    // Drop Table
+                    ExecuteNonQueryCommand($"DROP TABLE {tempTable}", connString);
                 }
-                    
-                }
-            
-          
+            }
+            finally
+            {
+                DropFileStreamDb(DataTestUtility.TCPConnectionString);
+            }
         }
 
         [PlatformSpecific(TestPlatforms.Windows)]
@@ -95,12 +91,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
-                    InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
-                     ,IntegratedSecurity = true
+                    InitialCatalog = SetupFileStreamDB(),
+                    IntegratedSecurity = true
                 }.ConnectionString;
 
-                using SqlConnection connection = new(connString);
-                connection.Open();
+
                 string tempTable = SetupTable(connString);
                 byte[] insertedValue = BitConverter.GetBytes(3);
 
@@ -109,6 +104,8 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                     Array.Reverse(insertedValue);
                 try
                 {
+                    using SqlConnection connection = new(connString);
+                    connection.Open();
                     SqlCommand command = new($"SELECT TOP(1) Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection);
 
                     SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
@@ -142,7 +139,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             finally
             {
-                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
+                DropFileStreamDb(DataTestUtility.TCPConnectionString);
             }
         }
 
@@ -154,8 +151,8 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 string connString = new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString)
                 {
-                    InitialCatalog = SetupFileStreamDB(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString)
-                       ,IntegratedSecurity = true
+                    InitialCatalog = SetupFileStreamDB(),
+                    IntegratedSecurity = true
                 }.ConnectionString;
 
                 string tempTable = SetupTable(connString);
@@ -171,37 +168,34 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 try
                 {
                     using SqlConnection connection = new(connString);
+                    connection.Open();
+                    SqlCommand command = new($"SELECT TOP(1) Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection);
+
+                    SqlTransaction transaction = connection.BeginTransaction(IsolationLevel.ReadCommitted);
+                    command.Transaction = transaction;
+
+                    using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        connection.Open();
-
-                        using (SqlTransaction transaction = connection.BeginTransaction())
+                        while (reader.Read())
                         {
-                            using (SqlCommand command = new SqlCommand($"SELECT Photo.PathName(), GET_FILESTREAM_TRANSACTION_CONTEXT(),EmployeeId FROM {tempTable} ORDER BY EmployeeId", connection, transaction))
-                            {
-                                using (SqlDataReader reader = command.ExecuteReader())
-                                {
-                                    while (reader.Read())
-                                    {
-                                        // Get the pointer for file  
-                                        string path = reader.GetString(0);
-                                        byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
+                            // Get the pointer for file  
+                            string path = reader.GetString(0);
+                            byte[] transactionContext = reader.GetSqlBytes(1).Buffer;
 
-                                        using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
-                                        // Seek to the end of the file  
-                                        fileStream.Seek(0, SeekOrigin.End);
+                            using Stream fileStream = new SqlFileStream(path, transactionContext, FileAccess.ReadWrite, FileOptions.SequentialScan, allocationSize: 0);
+                            // Seek to the end of the file  
+                            fileStream.Seek(0, SeekOrigin.End);
 
-                                        // Append a single byte   
-                                        fileStream.WriteByte(appendedByte);
-                                    }
-                                }
-                                transaction.Commit();
-
-                                // Compare inserted and retrieved value
-                                byte[] retrievedValue = RetrieveData(tempTable, connString, insertedValue.Length);
-                                Assert.Equal(insertedValue, retrievedValue);
-                            }
+                            // Append a single byte   
+                            fileStream.WriteByte(appendedByte);
                         }
                     }
+                    transaction.Commit();
+
+                    // Compare inserted and retrieved value
+                    byte[] retrievedValue = RetrieveData(tempTable, connString, insertedValue.Length);
+                    Assert.Equal(insertedValue, retrievedValue);
+
                 }
                 finally
                 {
@@ -211,14 +205,15 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             finally
             {
-                DropFileStreamDb(ref DataTestUtility.FileStreamDirectory, DataTestUtility.TCPConnectionString);
+                DropFileStreamDb(DataTestUtility.TCPConnectionString);
             }
         }
 
         #region Private helper methods
 
-        private static string SetupFileStreamDB(ref string fileStreamDir, string connString)
+        private static string SetupFileStreamDB()
         {
+            string fileStreamDir = DataTestUtility.FileStreamDirectory;
             try
             {
                 if (fileStreamDir != null)
@@ -239,7 +234,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                                          LOG ON
                                           (NAME = PhotoLibrary_log,
                                            FILENAME = '{fileStreamDir}PhotoLibrary_log.ldf')";
-                    using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" , IntegratedSecurity = true }.ConnectionString);
+                    using SqlConnection con = new(new SqlConnectionStringBuilder(DataTestUtility.TCPConnectionString) { InitialCatalog = "master", IntegratedSecurity = true }.ConnectionString);
                     con.Open();
                     using SqlCommand cmd = con.CreateCommand();
                     cmd.CommandText = createDBQuery;
@@ -255,53 +250,45 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             return s_fileStreamDBName;
         }
 
-        private static void DropFileStreamDb(ref string fileStreamDir, string connString)
+        private static void DropFileStreamDb(string connString)
         {
             try
             {
-                using SqlConnection con = new(new SqlConnectionStringBuilder(connString)
-                { InitialCatalog = "master" }.ConnectionString);
+                using SqlConnection con = new(new SqlConnectionStringBuilder(connString) { InitialCatalog = "master" }.ConnectionString);
                 con.Open();
                 DataTestUtility.DropDatabase(con, s_fileStreamDBName);
-                        s_fileStreamDBName = null;
-                                    
+                s_fileStreamDBName = null;
             }
             catch (SqlException e)
             {
                 Console.WriteLine("File Stream database could not be dropped. " + e.Message);
-                fileStreamDir = null;
             }
         }
 
         private static string SetupTable(string connString)
         {
-
             // Generate random table name
             string tempTable = "fs_" + Guid.NewGuid().ToString().Replace('-', '_');
-
             // Create table
             string createTable = $"CREATE TABLE {tempTable} (EmployeeId INT  NOT NULL  PRIMARY KEY, Photo VARBINARY(MAX) FILESTREAM  NULL, RowGuid UNIQUEIDENTIFIER NOT NULL ROWGUIDCOL UNIQUE DEFAULT NEWID() ) ";
-            using (SqlConnection conn = new SqlConnection(connString))
-            {
-                ExecuteNonQueryCommand(createTable, connString);
+            ExecuteNonQueryCommand(createTable, connString);
 
-                // Insert data into created table
-                for (int i = 0; i < s_insertedValues.Length; i++)
-                {
-                    string prepTable = $"INSERT INTO {tempTable} VALUES ({i + 1}, {s_insertedValues[i]} , default)";
-                    ExecuteNonQueryCommand(prepTable, connString);
-                }
+            // Insert data into created table
+            for (int i = 0; i < s_insertedValues.Length; i++)
+            {
+                string prepTable = $"INSERT INTO {tempTable} VALUES ({i + 1}, {s_insertedValues[i]} , default)";
+                ExecuteNonQueryCommand(prepTable, connString);
             }
+
             return tempTable;
         }
 
         private static void ExecuteNonQueryCommand(string cmdText, string connString)
         {
-            using (SqlConnection conn = new(connString))
+            using (SqlConnection conn = new SqlConnection(connString))
             {
                 conn.Open();
-
-                using SqlCommand cmd = new SqlCommand(cmdText,conn);
+                using SqlCommand cmd = conn.CreateCommand();
                 cmd.CommandText = cmdText;
                 cmd.ExecuteNonQuery();
             }
@@ -310,11 +297,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         private static byte[] RetrieveData(string tempTable, string connString, int len)
         {
             byte[] bArray = new byte[len];
-
-            using (SqlConnection conn = new(connString))
+            using (SqlConnection conn = new SqlConnection(connString))
             {
                 conn.Open();
-
                 SqlCommand command = new($"SELECT TOP(1) Photo FROM {tempTable}", conn);
                 using (SqlDataReader reader = command.ExecuteReader())
                 {
