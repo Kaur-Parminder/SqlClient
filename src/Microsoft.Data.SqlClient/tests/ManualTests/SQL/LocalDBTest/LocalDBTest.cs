@@ -98,7 +98,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             SqlConnectionStringBuilder builder = new(connectionString)
             {
                 IntegratedSecurity = true,
-                ConnectTimeout = 2,
+                ConnectTimeout = 15,
                 Encrypt = true
             };
             OpenConnection(builder.ConnectionString);
