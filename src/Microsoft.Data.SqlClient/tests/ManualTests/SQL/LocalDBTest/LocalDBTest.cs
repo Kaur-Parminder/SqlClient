@@ -88,7 +88,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 IntegratedSecurity = true,
                 MultipleActiveResultSets = true,
-                ConnectTimeout = 2
+                ConnectTimeout = 15
             };
             OpenConnection(builder.ConnectionString);
         }
@@ -109,7 +109,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             SqlConnectionStringBuilder builder = new(connectionString)
             {
                 IntegratedSecurity = true,
-                ConnectTimeout = 2
+                ConnectTimeout = 15
             };
             OpenConnection(builder.ConnectionString);
         }
