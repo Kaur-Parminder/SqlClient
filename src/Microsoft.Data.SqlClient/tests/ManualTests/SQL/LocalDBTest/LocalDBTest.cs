@@ -154,7 +154,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 RedirectStandardError = true,
             };
             string[] lines = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            if(lines.Length <= 1)
+            if(lines.Length != 9)
             {
                 Thread.Sleep(2000);
             }
