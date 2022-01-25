@@ -1,7 +1,10 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading;
 using Xunit;
 
 namespace Microsoft.Data.SqlClient.ManualTesting.Tests
@@ -13,7 +16,10 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         private static readonly string s_localDbConnectionString = @$"server=(localdb)\{DataTestUtility.LocalDbAppName}";
         private static readonly string[] s_sharedLocalDbInstances = new string[] { @$"server=(localdb)\.\{DataTestUtility.LocalDbSharedInstanceName}", @$"server=(localdb)\." };
         private static readonly string s_badConnectionString = $@"server=(localdb)\{DataTestUtility.LocalDbAppName};Database=DOES_NOT_EXIST;Pooling=false;";
-
+        private static readonly string s_commandPrompt = "cmd.exe";
+        private static readonly string s_sqlLocalDbInfo = @$"/c SqlLocalDb info {DataTestUtility.LocalDbAppName}";
+        private static readonly string s_startLocalDbCommand = @$"/c SqlLocalDb start {DataTestUtility.LocalDbAppName}";
+       // private static readonly string s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
         static string LocalDbName = DataTestUtility.LocalDbAppName;
         #region LocalDbTests
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
@@ -65,6 +71,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SharedLocalDbMarsTest()
         {
+            startLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionWithMarsTest(connectionString);
@@ -75,6 +82,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SqlLocalDbSharedInstanceConnectionTest()
         {
+            startLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionTest(connectionString);
@@ -122,6 +130,35 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             using SqlCommand command = new SqlCommand("SELECT @@SERVERNAME", connection);
             var result = command.ExecuteScalar();
             Assert.NotNull(result);
+        }
+        private static void startLocalDB()
+        {
+            string state = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "state");
+            while (state.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
+            {
+                state = ExecuteLocalDBCommandProcess(s_commandPrompt, s_startLocalDbCommand, "state");
+                Thread.Sleep(2000);
+            }
+            return;
+        }
+
+        private static string ExecuteLocalDBCommandProcess(string filename, string arguments, string infoType)
+        {
+            ProcessStartInfo sInfo = new()
+            {
+                FileName = filename,
+                Arguments = arguments,
+                UseShellExecute = false,
+                CreateNoWindow = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            string[] lines = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            if (infoType.Equals("state"))
+            {
+                return lines[5].Split(':')[1].Trim();
+            }
+            return null;
         }
     }
 }
