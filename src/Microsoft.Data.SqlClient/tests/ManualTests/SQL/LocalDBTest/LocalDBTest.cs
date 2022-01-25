@@ -154,6 +154,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 RedirectStandardError = true,
             };
             string[] lines = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+            if(lines.Length <= 1)
+            {
+                Thread.Sleep(2000);
+            }
+
             if (infoType.Equals("state"))
             {
                 return lines[5].Split(':')[1].Trim();
