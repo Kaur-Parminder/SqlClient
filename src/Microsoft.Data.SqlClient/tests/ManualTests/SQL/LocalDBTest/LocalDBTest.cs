@@ -152,18 +152,23 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 CreateNoWindow = false,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
-            };
-            string[] lines = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
-            if(lines.Length != 9)
-            {
-                Thread.Sleep(2000);
-            }
+            };       
+            
 
-            if (infoType.Equals("state"))
+            if (arguments == s_startLocalDbCommand)
             {
-                return lines[5].Split(':')[1].Trim();
+                string[] lines = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+
+                if(lines[0].Contains("started"))
+                {
+                    sInfo.Arguments = s_sqlLocalDbInfo;
+                }
+
             }
-            return null;
+            string[] output = Process.Start(sInfo).StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+
+            return output[5].Split(':')[1].Trim();
+
         }
     }
 }
