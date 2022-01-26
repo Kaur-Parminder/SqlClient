@@ -84,6 +84,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SqlLocalDbSharedInstanceConnectionTest()
         {
+            RestartLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionTest(connectionString);
