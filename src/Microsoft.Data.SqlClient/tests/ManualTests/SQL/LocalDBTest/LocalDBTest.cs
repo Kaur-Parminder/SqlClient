@@ -73,6 +73,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SharedLocalDbMarsTest()
         {
+            RestartLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionWithMarsTest(connectionString);
@@ -134,13 +135,18 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
         private static string GetLocalDbNamedPipe()
         {
+            RestartLocalDB();
+            return ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "pipeName");
+        }
+
+        private static void RestartLocalDB()
+        {
             string state = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "state");
             while (state.Equals("stopped", StringComparison.InvariantCultureIgnoreCase))
             {
                 state = ExecuteLocalDBCommandProcess(s_commandPrompt, s_startLocalDbCommand, "state");
                 Thread.Sleep(2000);
             }
-            return ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "pipeName");
         }
 
         private static string ExecuteLocalDBCommandProcess(string filename, string arguments, string infoType)
