@@ -25,32 +25,16 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void SqlLocalDbConnectionTest()
         {
-            RestartLocalDB();
             ConnectionTest(s_localDbConnectionString);
-            while(!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
-            {
-                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
-
-                //GetLocalDbNamedPipe();
-            }
-            ConnectionTest(s_localDbNamedPipeConnectionString);
         }
 
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBEncryptionNotSupportedTest()
         {
-            RestartLocalDB();
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
             ConnectionWithEncryptionTest(s_localDbConnectionString);
-            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
-            {
-                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
-
-                //GetLocalDbNamedPipe();
-            }
-            ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
         }
 
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
@@ -59,13 +43,6 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             RestartLocalDB();
             ConnectionWithMarsTest(s_localDbConnectionString);
-            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
-            {
-                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
-
-                // GetLocalDbNamedPipe();
-            }
-            ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
         }
 
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
@@ -114,6 +91,44 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         }
         #endregion
 
+        #region NamedPipe tests
+
+        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
+        [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
+        public static void SqlLocalDbNamedPipeConnectionTest()
+        {
+            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+            }
+            ConnectionTest(s_localDbNamedPipeConnectionString);
+        }
+
+        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
+        [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
+        public static void LocalDBNamedPipeEncryptionNotSupportedTest()
+        {
+            // Encryption is not supported by SQL Local DB.
+            // But connection should succeed as encryption is disabled by driver.
+            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+            }
+            ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
+        }
+
+        [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
+        [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
+        public static void LocalDBNamedPipeMarsTest()
+        {
+            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+            }
+            ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
+        }
+
+        #endregion
         private static void ConnectionWithMarsTest(string connectionString)
         {
             SqlConnectionStringBuilder builder = new(connectionString)
