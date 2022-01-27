@@ -25,8 +25,12 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void SqlLocalDbConnectionTest()
         {
-            RestartLocalDB();
+          //  RestartLocalDB();
             ConnectionTest(s_localDbConnectionString);
+            if(!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                GetLocalDbNamedPipe();
+            }
             ConnectionTest(s_localDbNamedPipeConnectionString);
         }
 
@@ -34,10 +38,14 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBEncryptionNotSupportedTest()
         {
-            RestartLocalDB();
+        //    RestartLocalDB();
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
             ConnectionWithEncryptionTest(s_localDbConnectionString);
+            if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                GetLocalDbNamedPipe();
+            }
             ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
         }
 
@@ -45,8 +53,12 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBMarsTest()
         {
-            RestartLocalDB();
+          //  RestartLocalDB();
             ConnectionWithMarsTest(s_localDbConnectionString);
+            if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            {
+                GetLocalDbNamedPipe();
+            }
             ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
         }
 
