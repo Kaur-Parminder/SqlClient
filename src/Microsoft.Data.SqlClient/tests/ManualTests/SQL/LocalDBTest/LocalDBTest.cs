@@ -18,7 +18,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         private static readonly string s_commandPrompt = "cmd.exe";
         private static readonly string s_sqlLocalDbInfo = @$"/c SqlLocalDb info {DataTestUtility.LocalDbAppName}";
         private static readonly string s_startLocalDbCommand = @$"/c SqlLocalDb start {DataTestUtility.LocalDbAppName}";
-        private static readonly string s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+        private static string s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
 
         #region LocalDbTests
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
@@ -29,7 +29,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             ConnectionTest(s_localDbConnectionString);
             if(!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
-                GetLocalDbNamedPipe();
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+
+                //GetLocalDbNamedPipe();
             }
             ConnectionTest(s_localDbNamedPipeConnectionString);
         }
@@ -44,7 +46,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             ConnectionWithEncryptionTest(s_localDbConnectionString);
             if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
-                GetLocalDbNamedPipe();
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+
+                //GetLocalDbNamedPipe();
             }
             ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
         }
@@ -57,7 +61,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             ConnectionWithMarsTest(s_localDbConnectionString);
             if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
-                GetLocalDbNamedPipe();
+                s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+
+                // GetLocalDbNamedPipe();
             }
             ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
         }
