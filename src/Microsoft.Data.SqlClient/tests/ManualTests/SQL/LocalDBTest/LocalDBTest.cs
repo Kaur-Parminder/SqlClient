@@ -27,7 +27,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             RestartLocalDB();
             ConnectionTest(s_localDbConnectionString);
-            if(!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            while(!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
 
@@ -44,7 +44,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
             ConnectionWithEncryptionTest(s_localDbConnectionString);
-            if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
 
@@ -59,7 +59,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             RestartLocalDB();
             ConnectionWithMarsTest(s_localDbConnectionString);
-            if (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
+            while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
 
