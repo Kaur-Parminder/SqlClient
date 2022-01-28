@@ -125,6 +125,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
             }
+            string ownername = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "owner");
+            if(!CheckUserExistforLocalDBNamedPipeDB(ownername))
+            {
+                createUserforLocalDBNamedPipeDB(ownername);
+            }
             ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
         }
 
@@ -213,7 +218,48 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 return lines[7].Split(new string[] { "Instance pipe name:" }, StringSplitOptions.None)[1].Trim();
             }
+            else if (infoType.Equals("owner"))
+            {
+                return lines[3].Split(new string[] { "Owner:" }, StringSplitOptions.None)[1].Trim();
+            }
             return null;
+        }
+
+        private static bool CheckUserExistforLocalDBNamedPipeDB(string username)
+        {
+            string checkIfUserexist = "select * from master.sys.server_principals";
+            using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
+            {
+                SqlCommand cmd_checkIfUserexist = new SqlCommand(checkIfUserexist, connection);
+                connection.Open();
+                using (SqlDataReader reader = cmd_checkIfUserexist.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        if (reader["name"].ToString() == username)
+                        {
+                            return true;
+                        }
+                    }
+                }       
+            }
+            return false;
+        }
+  
+        private static void createUserforLocalDBNamedPipeDB(string username)
+        {
+            string checkIfUserexist = "CREATE LOGIN" + username +"FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
+            using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
+            {
+                SqlCommand cmd_createuser = new SqlCommand(checkIfUserexist, connection);
+                connection.Open();
+                cmd_createuser.ExecuteNonQuery();
+
+                string alterpermisson = "ALTER SERVER ROLE [sysadmin] ADD MEMBER [" + username + "]";
+                SqlCommand cmd_alterUserPermission = new SqlCommand(alterpermisson);
+                cmd_alterUserPermission.ExecuteNonQuery();
+
+            }
         }
     }
 }
