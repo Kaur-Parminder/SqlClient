@@ -220,6 +220,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             else if (infoType.Equals("owner"))
             {
+                Assert.Equal("", lines[3]);
                 return lines[3].Split(new string[] { "Owner:" }, StringSplitOptions.None)[1].Trim();
             }
             return null;
@@ -248,6 +249,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
   
         private static void createUserforLocalDBNamedPipeDB(string username)
         {
+
             string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
             using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
             {
@@ -260,6 +262,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 cmd_alterUserPermission.ExecuteNonQuery();
 
             }
+            Assert.Equal("", username);
         }
     }
 }
