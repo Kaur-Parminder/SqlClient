@@ -126,9 +126,9 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
             }
             string ownername = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "owner");
-            if(!CheckUserExistforLocalDBNamedPipeDB(ownername))
+            if(!CheckUserExistforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString))
             {
-                createUserforLocalDBNamedPipeDB(ownername);
+                createUserforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString);
             }
             ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
         }
@@ -225,10 +225,10 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             return null;
         }
 
-        private static bool CheckUserExistforLocalDBNamedPipeDB(string username)
+        private static bool CheckUserExistforLocalDBNamedPipeDB(string username, string connstring)
         {
             string checkIfUserexist = "select * from master.sys.server_principals";
-            using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
+            using (SqlConnection connection = new SqlConnection(connstring))
             {
                 SqlCommand cmd_checkIfUserexist = new SqlCommand(checkIfUserexist, connection);
                 connection.Open();
@@ -246,11 +246,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             return false;
         }
   
-        private static void createUserforLocalDBNamedPipeDB(string username)
+        private static void createUserforLocalDBNamedPipeDB(string username, string connstring)
         {
 
             string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
-            using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
+            using (SqlConnection connection = new SqlConnection(connstring))
             {
                 SqlCommand cmd_createuser = new SqlCommand(createlogin, connection);
                 connection.Open();
