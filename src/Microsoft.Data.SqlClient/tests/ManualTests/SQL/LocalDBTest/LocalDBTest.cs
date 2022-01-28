@@ -258,7 +258,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 cmd_createuser.ExecuteNonQuery();
 
                 string alterpermisson = "ALTER SERVER ROLE [sysadmin] ADD MEMBER [" + username + "]";
-                SqlCommand cmd_alterUserPermission = new SqlCommand(alterpermisson);
+                SqlCommand cmd_alterUserPermission = new SqlCommand(alterpermisson,connection);
                 cmd_alterUserPermission.ExecuteNonQuery();
 
             }
