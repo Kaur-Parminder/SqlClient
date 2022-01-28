@@ -220,7 +220,6 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
             else if (infoType.Equals("owner"))
             {
-                Assert.Equal("", lines[3]);
                 return lines[3].Split(new string[] { "Owner:" }, StringSplitOptions.None)[1].Trim();
             }
             return null;
@@ -262,7 +261,6 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 cmd_alterUserPermission.ExecuteNonQuery();
 
             }
-            Assert.Equal("", username);
         }
     }
 }
