@@ -248,10 +248,10 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
   
         private static void createUserforLocalDBNamedPipeDB(string username)
         {
-            string checkIfUserexist = "CREATE LOGIN" + username +"FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
+            string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
             using (SqlConnection connection = new SqlConnection(DataTestUtility.TCPConnectionString))
             {
-                SqlCommand cmd_createuser = new SqlCommand(checkIfUserexist, connection);
+                SqlCommand cmd_createuser = new SqlCommand(createlogin, connection);
                 connection.Open();
                 cmd_createuser.ExecuteNonQuery();
 
