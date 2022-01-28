@@ -101,6 +101,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
             }
+            string ownername = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "owner");
+            if (!CheckUserExistforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString))
+            {
+                createUserforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString);
+            }
             ConnectionTest(s_localDbNamedPipeConnectionString);
         }
 
@@ -113,6 +118,11 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+            }
+            string ownername = ExecuteLocalDBCommandProcess(s_commandPrompt, s_sqlLocalDbInfo, "owner");
+            if (!CheckUserExistforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString))
+            {
+                createUserforLocalDBNamedPipeDB(ownername, s_localDbNamedPipeConnectionString);
             }
             ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
         }
@@ -248,7 +258,6 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
   
         private static void createUserforLocalDBNamedPipeDB(string username, string connstring)
         {
-
             string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
             using (SqlConnection connection = new SqlConnection(connstring))
             {
