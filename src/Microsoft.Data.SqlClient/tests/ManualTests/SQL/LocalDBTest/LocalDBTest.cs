@@ -244,7 +244,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
             string checkIfUserexist = "select * from master.sys.server_principals";
             using (SqlConnection connection = new SqlConnection("Data Source=tcp:localhost;" +
-           ";Integrated Security = true;Connect Timeout = 2;"))
+           ";Integrated Security = true;Connect Timeout = 2;Encrypt=false;"))
             {
                 SqlCommand cmd_checkIfUserexist = new SqlCommand(checkIfUserexist, connection);
                 connection.Open();
@@ -266,7 +266,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
             using (SqlConnection connection = new SqlConnection("Data Source=tcp:localhost;" +
-           ";Integrated Security = true;Connect Timeout = 2;"))
+           ";Integrated Security = true;Connect Timeout = 2; Encrypt=false;"))
             {
                 SqlCommand cmd_createuser = new SqlCommand(createlogin, connection);
                 connection.Open();
