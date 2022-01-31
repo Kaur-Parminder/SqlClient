@@ -284,6 +284,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 sc.Start();
                 Thread.Sleep(2000);
+                Assert.Equal(ServiceControllerStatus.Running, sc.Status);
             }
 
         }
