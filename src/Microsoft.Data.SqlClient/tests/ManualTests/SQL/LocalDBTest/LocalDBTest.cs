@@ -98,7 +98,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void SqlLocalDbNamedPipeConnectionTest()
         {
-            CheckSqlBrowserstatus();
+            EnsureSqlBrowserRunning();
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
@@ -115,7 +115,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBNamedPipeEncryptionNotSupportedTest()
         {
-            CheckSqlBrowserstatus();
+            EnsureSqlBrowserRunning();
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
@@ -134,7 +134,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBNamedPipeMarsTest()
         {
-            CheckSqlBrowserstatus();
+            EnsureSqlBrowserRunning();
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
@@ -277,11 +277,15 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             }
         }
 
-        private static void CheckSqlBrowserstatus(s)
+        private static void EnsureSqlBrowserRunning()
         {
             ServiceController sc = new("SQLBrowser");
-            Assert.Equal(ServiceControllerStatus.Running, sc.Status);         
-         
+            if(ServiceControllerStatus.Running != sc.Status)
+            {
+                sc.Start();
+                Thread.Sleep(2000);
+            }
+
         }
     }
 }
