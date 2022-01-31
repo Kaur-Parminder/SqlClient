@@ -243,7 +243,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
 
             string checkIfUserexist = "select * from master.sys.server_principals";
-            using (SqlConnection connection = new SqlConnection(connstring +
+            using (SqlConnection connection = new SqlConnection("Data Source=tcp:localhost;" +
            ";Integrated Security = true;Connect Timeout = 2;"))
             {
                 SqlCommand cmd_checkIfUserexist = new SqlCommand(checkIfUserexist, connection);
@@ -265,7 +265,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         private static void createUserforLocalDBNamedPipeDB(string username, string connstring)
         {
             string createlogin = "CREATE LOGIN [" + username +"] FROM WINDOWS WITH DEFAULT_DATABASE=[master]";
-            using (SqlConnection connection = new SqlConnection(connstring +
+            using (SqlConnection connection = new SqlConnection("Data Source=tcp:localhost;" +
            ";Integrated Security = true;Connect Timeout = 2;"))
             {
                 SqlCommand cmd_createuser = new SqlCommand(createlogin, connection);
