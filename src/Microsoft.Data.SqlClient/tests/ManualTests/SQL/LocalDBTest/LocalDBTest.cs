@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 using System;
 using System.Diagnostics;
+using System.ServiceProcess;
 using System.Threading;
 using Xunit;
 
@@ -97,6 +98,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void SqlLocalDbNamedPipeConnectionTest()
         {
+            CheckSqlBrowserstatus();
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
@@ -113,6 +115,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBNamedPipeEncryptionNotSupportedTest()
         {
+            CheckSqlBrowserstatus();
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
@@ -131,6 +134,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBNamedPipeMarsTest()
         {
+            CheckSqlBrowserstatus();
             while (!s_localDbNamedPipeConnectionString.Contains("LOCALDB#"))
             {
                 s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
@@ -237,6 +241,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
 
         private static bool CheckUserExistforLocalDBNamedPipeDB(string username, string connstring)
         {
+
             string checkIfUserexist = "select * from master.sys.server_principals";
             using (SqlConnection connection = new SqlConnection(connstring))
             {
@@ -270,6 +275,13 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
                 cmd_alterUserPermission.ExecuteNonQuery();
 
             }
+        }
+
+        private static void CheckSqlBrowserstatus(s)
+        {
+            ServiceController sc = new("SQLBrowser");
+            Assert.Equal(ServiceControllerStatus.Running, sc.Status);         
+         
         }
     }
 }
