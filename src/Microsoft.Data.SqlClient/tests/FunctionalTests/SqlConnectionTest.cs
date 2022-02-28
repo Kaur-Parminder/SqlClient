@@ -439,7 +439,7 @@ namespace Microsoft.Data.SqlClient.Tests
         public void ConnectionString_AttachDbFileName_DataDirectory_Throws(string value, object dataDirectory)
         {
             AppDomain.CurrentDomain.SetData("DataDirectory", dataDirectory);
-
+            Assert.Equal(dataDirectory, AppDomain.CurrentDomain.GetData("DataDirectory"));
             SqlConnection cn = new SqlConnection();
             Assert.Throws<InvalidOperationException>(() => cn.ConnectionString = value);
         }
