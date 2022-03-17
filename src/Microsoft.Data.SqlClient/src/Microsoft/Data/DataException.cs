@@ -43,7 +43,7 @@ namespace Microsoft.Data
 
         internal static ArgumentException _Argument(string error)
         {
-            ArgumentException e = new ArgumentException(error);
+            ArgumentException e = new(error);
             ExceptionBuilder.TraceExceptionAsReturnValue(e);
             return e;
         }
