@@ -48,7 +48,7 @@ namespace Microsoft.Data.SqlClient.Tests
             Assert.Null(cmd.Notification);
 #if NETFRAMEWORK
             // see https://github.com/dotnet/SqlClient/issues/17
-            Assert.True(cmd.NotificationAutoEnlist);
+           // Assert.True(cmd.NotificationAutoEnlist);
 #endif
             Assert.NotNull(cmd.Parameters);
             Assert.Equal(0, cmd.Parameters.Count);
