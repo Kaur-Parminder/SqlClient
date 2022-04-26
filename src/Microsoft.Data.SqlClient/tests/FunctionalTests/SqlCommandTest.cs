@@ -4,6 +4,7 @@
 
 using System;
 using System.Data;
+using System.Reflection;
 using Microsoft.Data.Sql;
 using Xunit;
 
@@ -260,6 +261,11 @@ namespace Microsoft.Data.SqlClient.Tests
         [Fact]
         public void CommandText()
         {
+#if NETSTANDARD
+            Assert.Contains("NetStandard", Assembly.GetExecutingAssembly().EscapedCodeBase);
+#else
+            Assert.Contains("Project", Assembly.GetExecutingAssembly().EscapedCodeBase);
+#endif
             SqlCommand cmd = new SqlCommand();
             cmd.CommandText = COMMAND_TEXT;
             Assert.Same(COMMAND_TEXT, cmd.CommandText);
