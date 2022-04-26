@@ -345,6 +345,18 @@ namespace Microsoft.Data.SqlClient
         {
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public int checkNetStandard()
+        {
+#if NETSTANDARD
+    return 1;
+#else
+            return 2;
+#endif
+        }
         /// <include file='../../../../../../../doc/snippets/Microsoft.Data.SqlClient/SqlConnection.xml' path='docs/members[@name="SqlConnection"]/ctorConnectionStringCredential/*' />
         public SqlConnection(string connectionString, SqlCredential credential) : this()
         {

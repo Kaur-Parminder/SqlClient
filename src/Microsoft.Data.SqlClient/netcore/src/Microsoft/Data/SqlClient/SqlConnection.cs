@@ -159,8 +159,21 @@ namespace Microsoft.Data.SqlClient
             ConnectionString = connectionString;    // setting connection string first so that ConnectionOption is available
         }
 
-        /// <include file='../../../../../../../doc/snippets/Microsoft.Data.SqlClient/SqlConnection.xml' path='docs/members[@name="SqlConnection"]/ctorConnectionStringCredential/*' />
-        public SqlConnection(string connectionString, SqlCredential credential) : this()
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public int checkNetStandard()
+        {
+#if NETSTANDARD
+    return 1;
+#else
+            return 2;
+#endif
+        }
+
+            /// <include file='../../../../../../../doc/snippets/Microsoft.Data.SqlClient/SqlConnection.xml' path='docs/members[@name="SqlConnection"]/ctorConnectionStringCredential/*' />
+            public SqlConnection(string connectionString, SqlCredential credential) : this()
         {
             ConnectionString = connectionString;
             if (credential != null)

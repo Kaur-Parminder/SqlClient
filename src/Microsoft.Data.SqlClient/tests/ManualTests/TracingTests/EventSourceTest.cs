@@ -16,6 +16,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             using (SqlConnection connection = new(DataTestUtility.TCPConnectionString))
             {
                 connection.Open();
+                Assert.Equal(1,connection.checkNetStandard());
                 using SqlCommand command = new("SELECT @@VERSION", connection);
                 using SqlDataReader reader = command.ExecuteReader();
                 while (reader.Read())
