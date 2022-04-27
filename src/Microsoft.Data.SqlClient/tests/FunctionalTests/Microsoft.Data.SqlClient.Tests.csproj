@@ -11,8 +11,6 @@
     <DefineConstants Condition="$(ReferenceType.Contains('NetStandard'))">NETSTANDARDREFERNCE</DefineConstants>
     <IntermediateOutputPath Condition="!$(ReferenceType.Contains('NetStandard'))">$(ObjFolder)$(Configuration).$(Platform).$(AssemblyName)</IntermediateOutputPath>
     <OutputPath Condition="!$(ReferenceType.Contains('NetStandard'))">$(BinFolder)$(Configuration).$(Platform).$(AssemblyName)</OutputPath>
-      <!--<IntermediateOutputPath Condition="$(ReferenceType.Contains('NetStandard'))">$(ObjFolder)$(Configuration).$(Platform).$(AddOnName)</IntermediateOutputPath>
-    <OutputPath Condition="$(ReferenceType.Contains('NetStandard'))">$(BinFolder)$(Configuration).$(Platform).$(AddOnName)</OutputPath>-->
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AlwaysEncryptedTests\ExceptionsAlgorithmErrors.cs" />
