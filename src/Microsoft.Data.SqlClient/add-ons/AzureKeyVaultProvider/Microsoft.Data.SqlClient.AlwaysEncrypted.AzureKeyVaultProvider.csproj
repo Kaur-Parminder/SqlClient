@@ -8,8 +8,10 @@
     <TargetGroup Condition="$(TargetFramework.StartsWith('net4'))">netfx</TargetGroup>
     <Configurations>Debug;Release;</Configurations>
     <Platforms>AnyCPU;x86;x64</Platforms>
-    <IntermediateOutputPath>$(ObjFolder)$(Configuration).$(Platform)\$(AddOnName)</IntermediateOutputPath>
-    <OutputPath>$(BinFolder)$(Configuration).$(Platform)\$(AddOnName)</OutputPath>
+    <IntermediateOutputPath>$(ObjFolder)$(Configuration).$(Platform).$(AddOnName)</IntermediateOutputPath>
+    <OutputPath>$(BinFolder)$(Configuration).$(Platform).$(AddOnName)</OutputPath>
+    <!--<IntermediateOutputPath>$(ObjFolder)$(Configuration).$(Platform).$(AssemblyName)</IntermediateOutputPath>
+    <OutputPath>$(BinFolder)$(Configuration).$(Platform).$(AssemblyName)</OutputPath>-->
     <DocumentationFile>$(BinFolder)$(Configuration).$(Platform)\$(AssemblyName).xml</DocumentationFile>
     <!--BuildProjectReferences should be kept false to avoid test issues-->
     <BuildProjectReferences>false</BuildProjectReferences>
@@ -20,6 +22,8 @@
     <ProjectReference Condition="'$(TargetGroup)'=='netcoreapp' AND !$(ReferenceType.Contains('Package'))" Include="$(NetCoreSource)src\Microsoft.Data.SqlClient.csproj" />
     <ProjectReference Condition="'$(TargetGroup)'=='netfx' AND !$(ReferenceType.Contains('Package'))" Include="$(NetFxSource)src\Microsoft.Data.SqlClient.csproj" />
     <PackageReference Condition="$(ReferenceType.Contains('Package'))" Include="Microsoft.Data.SqlClient" Version="$(TestMicrosoftDataSqlClientVersion)" />
+    <PackageReference Condition="$(ReferenceType.Contains('NetStandard'))" Include="Microsoft.Data.SqlClient" Version="$(TestMicrosoftDataSqlClientVersion)" />
+
   </ItemGroup>
   <ItemGroup>
     <PackageReference Condition="$(BuildForRelease) == 'true'" Include="Microsoft.SourceLink.GitHub" Version="$(MicrosoftSourceLinkGitHubVersion)" PrivateAssets="All" />

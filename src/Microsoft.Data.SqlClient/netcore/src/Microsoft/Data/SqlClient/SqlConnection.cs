@@ -165,7 +165,7 @@ namespace Microsoft.Data.SqlClient
         /// <returns></returns>
         public int checkNetStandard()
         {
-#if NETSTANDARD
+#if NETSTANDARD2_0
     return 1;
 #else
             return 2;
