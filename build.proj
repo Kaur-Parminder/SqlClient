@@ -52,7 +52,6 @@
     <FunctionalTests Include="**/ManualTests/SQL/UdtTest/UDTs/Address/Address.csproj" />
     <FunctionalTests Include="**/FunctionalTests/Microsoft.Data.SqlClient.Tests.csproj" />
     <FunctionalTestsProj Include="**/FunctionalTests/Microsoft.Data.SqlClient.Tests.csproj" />
-    <FunctionalTestsProj Condition="$(ReferenceType.Contains('NetStandard'))" Include="**/NSLibrary/Microsoft.Data.SqlClient.NSLibrary.csproj" />
 
     <ManualTests Condition="$(ReferenceType.Contains('NetStandard'))" Include="**/NSLibrary/Microsoft.Data.SqlClient.NSLibrary.csproj" />
     <ManualTests Include="**/ManualTests/SQL/UdtTest/UDTs/Address/Address.csproj" />
@@ -65,7 +64,6 @@
     <ManualTests Include="**/CustomConfigurableRetryLogic/CustomRetryLogicProvider.csproj" />
     <ManualTests Include="**/ManualTests/Microsoft.Data.SqlClient.ManualTesting.Tests.csproj" />
     <ManualTestsProj Include="**/ManualTests/Microsoft.Data.SqlClient.ManualTesting.Tests.csproj" />
-    <ManualTestsProj Condition="$(ReferenceType.Contains('NetStandard'))" Include="**/NSLibrary/Microsoft.Data.SqlClient.NSLibrary.csproj" />
   </ItemGroup>
 
   <!-- Top Level Build targets -->
