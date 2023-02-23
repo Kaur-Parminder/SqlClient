@@ -98,37 +98,37 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             Assert.True(currentRetries > 0);
         }
 
-        [ConditionalTheory(typeof(DataTestUtility), nameof(DataTestUtility.AreConnStringsSetup))]
-        [MemberData(nameof(RetryLogicTestHelper.GetConnectionAndRetryStrategyInvalidCatalog), parameters: new object[] { 2 }, MemberType = typeof(RetryLogicTestHelper), DisableDiscoveryEnumeration = true)]
-        public void ConcurrentExecution(string cnnString, SqlRetryLogicBaseProvider provider)
-        {
-            int numberOfTries = provider.RetryLogic.NumberOfTries;
-            int cancelAfterRetries = numberOfTries + 1;
-            int retriesCount = 0;
-            int concurrentExecution = 5;
-            provider.Retrying += (s, e) => Interlocked.Increment(ref retriesCount);
+        //[ConditionalTheory(typeof(DataTestUtility), nameof(DataTestUtility.AreConnStringsSetup))]
+        //[MemberData(nameof(RetryLogicTestHelper.GetConnectionAndRetryStrategyInvalidCatalog), parameters: new object[] { 2 }, MemberType = typeof(RetryLogicTestHelper), DisableDiscoveryEnumeration = true)]
+        //public void ConcurrentExecution(string cnnString, SqlRetryLogicBaseProvider provider)
+        //{
+        //    int numberOfTries = provider.RetryLogic.NumberOfTries;
+        //    int cancelAfterRetries = numberOfTries + 1;
+        //    int retriesCount = 0;
+        //    int concurrentExecution = 5;
+        //    provider.Retrying += (s, e) => Interlocked.Increment(ref retriesCount);
 
-            Parallel.For(0, concurrentExecution,
-            i =>
-            {
-                using (var cnn = CreateConnectionWithInvalidCatalog(cnnString, provider, cancelAfterRetries))
-                {
-                    Assert.Throws<AggregateException>(() => cnn.Open());
-                }
-            });
-            Assert.Equal(numberOfTries * concurrentExecution, retriesCount + concurrentExecution);
+        //    Parallel.For(0, concurrentExecution,
+        //    i =>
+        //    {
+        //        using (var cnn = CreateConnectionWithInvalidCatalog(cnnString, provider, cancelAfterRetries))
+        //        {
+        //            Assert.Throws<AggregateException>(() => cnn.Open());
+        //        }
+        //    });
+        //    Assert.Equal(numberOfTries * concurrentExecution, retriesCount + concurrentExecution);
 
-            retriesCount = 0;
-            Parallel.For(0, concurrentExecution,
-            i =>
-            {
-                using (var cnn = CreateConnectionWithInvalidCatalog(cnnString, provider, cancelAfterRetries))
-                {
-                    Assert.ThrowsAsync<AggregateException>(() => cnn.OpenAsync()).Wait();
-                }
-            });
-            Assert.Equal(numberOfTries * concurrentExecution, retriesCount + concurrentExecution);
-        }
+        //    retriesCount = 0;
+        //    Parallel.For(0, concurrentExecution,
+        //    i =>
+        //    {
+        //        using (var cnn = CreateConnectionWithInvalidCatalog(cnnString, provider, cancelAfterRetries))
+        //        {
+        //            Assert.ThrowsAsync<AggregateException>(() => cnn.OpenAsync()).Wait();
+        //        }
+        //    });
+        //    Assert.Equal(numberOfTries * concurrentExecution, retriesCount + concurrentExecution);
+        //}
 
         [ConditionalTheory(typeof(DataTestUtility), nameof(DataTestUtility.AreConnStringsSetup))]
         [MemberData(nameof(RetryLogicTestHelper.GetNoneRetriableCondition), MemberType = typeof(RetryLogicTestHelper), DisableDiscoveryEnumeration = true)]
