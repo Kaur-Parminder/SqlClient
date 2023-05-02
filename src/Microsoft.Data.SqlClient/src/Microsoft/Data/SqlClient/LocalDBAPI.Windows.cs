@@ -3,9 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
-using Microsoft.Data.SqlClient;
 
-namespace Microsoft.Data
+namespace Microsoft.Data.SqlClient
 {
     internal static partial class LocalDBAPI
     {

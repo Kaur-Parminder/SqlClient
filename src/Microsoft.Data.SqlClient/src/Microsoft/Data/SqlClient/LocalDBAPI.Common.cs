@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Data.SqlClient;
 
-namespace Microsoft.Data
+namespace Microsoft.Data.SqlClient
 {
     internal static partial class LocalDBAPI
     {

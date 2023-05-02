@@ -4,11 +4,11 @@
 
 using System;
 
-namespace Microsoft.Data
+namespace Microsoft.Data.SqlClient
 {
     internal static partial class LocalDBAPI
     {
-        internal static string GetLocalDBMessage(int hrCode) =>
-            throw new PlatformNotSupportedException(Strings.LocalDBNotSupported); // LocalDB is not available for Unix and hence it cannot be supported.
+        //internal static string GetLocalDBMessage(int hrCode) =>
+        //    throw new PlatformNotSupportedException("");// Strings.LocalDBNotSupported); // LocalDB is not available for Unix and hence it cannot be supported.
     }
 }

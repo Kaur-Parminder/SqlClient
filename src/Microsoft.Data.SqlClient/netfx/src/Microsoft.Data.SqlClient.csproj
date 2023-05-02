@@ -206,6 +206,18 @@
     <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalAppContextSwitches.cs">
       <Link>Microsoft\Data\SqlClient\LocalAppContextSwitches.cs</Link>
     </Compile>
+    <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalDBAPI.Common.cs">
+      <Link>Microsoft\Data\SqlClient\LocalDBAPI.Common.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalDBAPI.Windows.cs">
+      <Link>Microsoft\Data\SqlClient\LocalDBAPI.Windows.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalDBAPI.cs">
+      <Link>Microsoft\Data\SqlClient\LocalDBAPI.cs</Link>
+    </Compile>
+    <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalDBAPI.Unix.cs">
+      <Link>Microsoft\Data\SqlClient\LocalDBAPI.Unix.cs</Link>
+    </Compile>
     <Compile Include="..\..\src\Microsoft\Data\SqlClient\NoneAttestationEnclaveProvider.cs">
       <Link>Microsoft\Data\SqlClient\NoneAttestationEnclaveProvider.cs</Link>
     </Compile>
@@ -622,8 +634,6 @@
     <Compile Include="Microsoft\Data\SqlClient\AlwaysEncryptedKeyConverter.Cng.cs" />
     <Compile Include="Microsoft\Data\SqlClient\assemblycache.cs" />
     <Compile Include="Microsoft\Data\SqlClient\LocalAppContextSwitches.netfx.cs" />
-    <Compile Include="Microsoft\Data\SqlClient\LocalDBAPI.cs" />
-    <Compile Include="Microsoft\Data\SqlClient\LocalDBConfig.cs" />
     <Compile Include="Microsoft\Data\SqlClient\Reliability\SqlConfigurableRetryLogicManager.LoadType.cs" />
     <Compile Include="Microsoft\Data\SqlClient\Server\SmiConnection.cs" />
     <Compile Include="Microsoft\Data\SqlClient\Server\SmiContext.cs" />

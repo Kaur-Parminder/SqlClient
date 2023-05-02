@@ -5,10 +5,11 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Data.SqlClient.SNI;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
 
-namespace Microsoft.Data.SqlClient.SNI
+namespace Microsoft.Data.SqlClient
 {
     internal sealed class LocalDB
     {
@@ -125,7 +126,7 @@ namespace Microsoft.Data.SqlClient.SNI
                     // If there was no DLL path found, then there is an error.
                     if (dllPath == null)
                     {
-                        SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, MapLocalDBErrorStateToCode(registryQueryErrorState), MapLocalDBErrorStateToErrorMessage(registryQueryErrorState));
+                        //SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, MapLocalDBErrorStateToCode(registryQueryErrorState), MapLocalDBErrorStateToErrorMessage(registryQueryErrorState));
                         SqlClientEventSource.Log.TrySNITraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is null.");
                         return false;
                     }
@@ -133,7 +134,7 @@ namespace Microsoft.Data.SqlClient.SNI
                     // In case the registry had an empty path for dll
                     if (string.IsNullOrWhiteSpace(dllPath))
                     {
-                        SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBInvalidSqlUserInstanceDllPath, Strings.SNI_ERROR_55);
+                        //SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBInvalidSqlUserInstanceDllPath, Strings.SNI_ERROR_55);
                         SqlClientEventSource.Log.TrySNITraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is invalid. DLL path = {0}", dllPath);
                         return false;
                     }
@@ -143,7 +144,7 @@ namespace Microsoft.Data.SqlClient.SNI
 
                     if (libraryHandle.IsInvalid)
                     {
-                        SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBFailedToLoadDll, Strings.SNI_ERROR_56);
+                        //SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBFailedToLoadDll, Strings.SNI_ERROR_56);
                         SqlClientEventSource.Log.TrySNITraceEvent(nameof(LocalDB), EventType.ERR, "Library Handle is invalid. Could not load the dll.");
                         libraryHandle.Dispose();
                         return false;
@@ -154,7 +155,7 @@ namespace Microsoft.Data.SqlClient.SNI
 
                     if (_startInstanceHandle == IntPtr.Zero)
                     {
-                        SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBBadRuntime, Strings.SNI_ERROR_57);
+                        //SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBBadRuntime, Strings.SNI_ERROR_57);
                         SqlClientEventSource.Log.TrySNITraceEvent(nameof(LocalDB), EventType.ERR, "Was not able to load the PROC from DLL. Bad Runtime.");
                         libraryHandle.Dispose();
                         return false;
@@ -165,7 +166,7 @@ namespace Microsoft.Data.SqlClient.SNI
 
                     if (localDBStartInstanceFunc == null)
                     {
-                        SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBBadRuntime, Strings.SNI_ERROR_57);
+                        //SNILoadHandle.SingletonInstance.LastError = new SNIError(SNIProviders.INVALID_PROV, 0, SNICommon.LocalDBBadRuntime, Strings.SNI_ERROR_57);
                         libraryHandle.Dispose();
                         _startInstanceHandle = IntPtr.Zero;
                         return false;
