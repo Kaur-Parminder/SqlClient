@@ -99,10 +99,8 @@ namespace Microsoft.Data.SqlClient.SNI
 
             bool errorWithLocalDBProcessing = false;
             string? localDBDataSource = null;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                localDBDataSource = LocalDB.GetLocalDBDataSource(serverName, out errorWithLocalDBProcessing);
-            }
+            localDBDataSource = LocalDB.GetLocalDBDataSource(serverName, out errorWithLocalDBProcessing);
+            
             if (errorWithLocalDBProcessing)
             {
                 sessionHandle = null;

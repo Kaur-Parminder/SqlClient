@@ -749,7 +749,9 @@
     <Compile Include="Interop\SNINativeMethodWrapper.Windows.cs" />
     <Compile Include="Microsoft\Data\ProviderBase\DbConnectionPoolIdentity.Windows.cs" />
     <Compile Include="Microsoft\Data\SqlClient\LocalDBAPI.Windows.cs" />
-    <Compile Include="Microsoft\Data\SqlClient\SNI\LocalDB.Windows.cs" />
+    <Compile Include="..\..\src\Microsoft\Data\SqlClient\LocalDB.Windows.cs">
+      <Link>Microsoft\Data\SqlClient\LocalDB.Windows.cs</Link>
+    </Compile>
     <Compile Include="Microsoft\Data\SqlClient\TdsParserStateObjectNative.cs" />
     <Compile Include="Microsoft\Data\SqlClient\TdsParser.Windows.cs" />
   </ItemGroup>
