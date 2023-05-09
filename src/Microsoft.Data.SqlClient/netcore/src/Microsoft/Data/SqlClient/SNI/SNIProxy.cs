@@ -145,6 +145,7 @@ namespace Microsoft.Data.SqlClient.SNI
         /// <param name="tlsFirst">Support TDS8.0</param>
         /// <param name="hostNameInCertificate">Used for the HostName in certificate</param>
         /// <param name="serverCertificateFilename">Used for the path to the Server Certificate</param>
+        /// <param name="isLocalDBSource">Is source LocalDB source</param>
         /// <returns>SNI handle</returns>
         internal static SNIHandle CreateConnectionHandle(
             string fullServerName,
@@ -162,20 +163,10 @@ namespace Microsoft.Data.SqlClient.SNI
             ref SQLDNSInfo pendingDNSInfo,
             bool tlsFirst,
             string hostNameInCertificate,
-            string serverCertificateFilename)
+            string serverCertificateFilename, bool isLocalDBSource = false)
         {
             instanceName = new byte[1];
-
-            bool errorWithLocalDBProcessing;
-            string localDBDataSource = GetLocalDBDataSource(fullServerName, out errorWithLocalDBProcessing);
-
-            if (errorWithLocalDBProcessing)
-            {
-                return null;
-            }
-            // If a localDB Data source is available, we need to use it.
-            fullServerName = localDBDataSource ?? fullServerName;
-
+          
             DataSource details = DataSource.ParseServerName(fullServerName);
             if (details == null)
             {
@@ -192,7 +183,7 @@ namespace Microsoft.Data.SqlClient.SNI
                         tlsFirst, hostNameInCertificate, serverCertificateFilename);
                     break;
                 case DataSource.Protocol.NP:
-                    sniHandle = CreateNpHandle(details, timerExpire, parallel, tlsFirst);
+            sniHandle = CreateNpHandle(details, timerExpire, parallel, tlsFirst);
                     break;
                 default:
                     Debug.Fail($"Unexpected connection protocol: {details._connectionProtocol}");
@@ -369,41 +360,7 @@ namespace Microsoft.Data.SqlClient.SNI
             return SNILoadHandle.SingletonInstance.LastError;
         }
 
-        /// <summary>
-        /// Gets the Local db Named pipe data source if the input is a localDB server.
-        /// </summary>
-        /// <param name="fullServerName">The data source</param>
-        /// <param name="error">Set true when an error occurred while getting LocalDB up</param>
-        /// <returns></returns>
-        private static string GetLocalDBDataSource(string fullServerName, out bool error)
-        {
-            string localDBConnectionString = null;
-            string localDBInstance = DataSource.GetLocalDBInstance(fullServerName, out bool isBadLocalDBDataSource);
-
-            if (isBadLocalDBDataSource)
-            {
-                error = true;
-                return null;
-            }
-
-            else if (!string.IsNullOrEmpty(localDBInstance))
-            {
-                // We have successfully received a localDBInstance which is valid.
-                Debug.Assert(!string.IsNullOrWhiteSpace(localDBInstance), "Local DB Instance name cannot be empty.");
-                localDBConnectionString = LocalDB.GetLocalDBConnectionString(localDBInstance);
-
-                if (fullServerName == null)
-                {
-                    // The Last error is set in LocalDB.GetLocalDBConnectionString. We don't need to set Last here.
-                    error = true;
-                    return null;
-                }
-            }
-            error = false;
-            return localDBConnectionString;
-        }
-    }
-
+     }
     internal class DataSource
     {
         private const char CommaSeparator = ',';

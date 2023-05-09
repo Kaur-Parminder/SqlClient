@@ -2,6 +2,9 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
+using System.Diagnostics;
+
 namespace Microsoft.Data.SqlClient.SNI
 {
     internal class LocalDB
@@ -10,5 +13,10 @@ namespace Microsoft.Data.SqlClient.SNI
         {
             throw new PlatformNotSupportedException(Strings.LocalDBNotSupported); // No Registry support on UAP
         }
+        internal static string GetLocalDBDataSource(string fullServerName, out bool error)
+        {
+            throw new PlatformNotSupportedException(Strings.LocalDBNotSupported); // No Registry support on UAP
+        }
+
     }
 }

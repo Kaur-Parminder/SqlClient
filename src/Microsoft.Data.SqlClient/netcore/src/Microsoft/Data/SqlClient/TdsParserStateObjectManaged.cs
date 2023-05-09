@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Common;
@@ -93,10 +94,30 @@ namespace Microsoft.Data.SqlClient.SNI
             string hostNameInCertificate,
             string serverCertificateFilename)
         {
-            SNIHandle? sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire, out instanceName, ref spnBuffer, serverSPN,
-                flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
-                hostNameInCertificate, serverCertificateFilename);
+            SNIHandle? sessionHandle;
+            instanceName = new byte[1];
 
+            bool errorWithLocalDBProcessing = false;
+            string? localDBDataSource = null;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                localDBDataSource = LocalDB.GetLocalDBDataSource(serverName, out errorWithLocalDBProcessing);
+            }
+            if (errorWithLocalDBProcessing)
+            {
+                sessionHandle = null;
+            }
+            // If a localDB Data source is available, we need to use it.
+            else if ((serverName = localDBDataSource ?? serverName) == null)
+            {
+                sessionHandle = null;
+            }
+            else
+            {
+                sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire, out instanceName, ref spnBuffer, serverSPN,
+                flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
+                hostNameInCertificate, serverCertificateFilename, serverName == localDBDataSource);
+            }
             if (sessionHandle is not null)
             {
                 _sessionHandle = sessionHandle;
@@ -111,6 +132,7 @@ namespace Microsoft.Data.SqlClient.SNI
             {
                 _parser.ProcessSNIError(this);
             }
+            
         }
 
         // The assignment will be happened right after we resolve DNS in managed SNI layer
