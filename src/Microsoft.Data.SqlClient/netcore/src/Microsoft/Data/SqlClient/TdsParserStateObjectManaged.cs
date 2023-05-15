@@ -103,20 +103,25 @@ namespace Microsoft.Data.SqlClient.SNI
             {
                 localDBDataSource = LocalDB.GetLocalDBDataSource(serverName, out errorWithLocalDBProcessing);
             }
-            if (errorWithLocalDBProcessing)
-            {
-                sessionHandle = null;
-            }
-            // If a localDB Data source is available, we need to use it.
-            else if ((serverName = localDBDataSource ?? serverName) == null)
+            if(errorWithLocalDBProcessing)
             {
                 sessionHandle = null;
             }
             else
             {
-                sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire, out instanceName, ref spnBuffer, serverSPN,
-                flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
-                hostNameInCertificate, serverCertificateFilename, serverName == localDBDataSource);
+                // If a localDB Data source is available, we need to use it.
+                serverName = localDBDataSource ?? serverName;
+                DataSource details = DataSource.ParseServerName(serverName);
+                if (details == null)
+                {
+                    sessionHandle = null;
+                }
+                else
+                {
+                    sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire, out instanceName, ref spnBuffer, serverSPN,
+                    flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
+                    hostNameInCertificate, serverCertificateFilename, details);
+                }
             }
             if (sessionHandle is not null)
             {
@@ -131,8 +136,7 @@ namespace Microsoft.Data.SqlClient.SNI
             else
             {
                 _parser.ProcessSNIError(this);
-            }
-            
+            }            
         }
 
         // The assignment will be happened right after we resolve DNS in managed SNI layer
