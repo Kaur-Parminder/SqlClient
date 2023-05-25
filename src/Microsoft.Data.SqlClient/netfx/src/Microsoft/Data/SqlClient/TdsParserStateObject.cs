@@ -12,6 +12,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Common;
+using Microsoft.Data.ProviderBase;
 
 namespace Microsoft.Data.SqlClient
 {
@@ -22,7 +23,7 @@ namespace Microsoft.Data.SqlClient
         internal bool _pendingData = false;
         internal bool _errorTokenReceived = false;               // Keep track of whether an error was received for the result.
                                                                  // This is reset upon each done token - there can be
-        // SNI variables                                                     // multiple resultsets in one batch.
+                                                                 // SNI variables                                                     // multiple resultsets in one batch.
         private SNIPacket _sniPacket = null;                // Will have to re-vamp this for MARS
         internal SNIPacket _sniAsyncAttnPacket = null;                // Packet to use to send Attn
         private readonly WritePacketCache _writePacketCache = new WritePacketCache(); // Store write packets that are ready to be re-used
@@ -105,13 +106,13 @@ namespace Microsoft.Data.SqlClient
             get => _hasOpenResult;
             set => _hasOpenResult = value;
         }
-        
+
         internal bool HasPendingData
         {
             get => _pendingData;
             set => _pendingData = value;
         }
-        
+
         internal uint Status
         {
             get
@@ -281,7 +282,7 @@ namespace Microsoft.Data.SqlClient
         internal void CreatePhysicalSNIHandle(
             string serverName,
             bool ignoreSniOpenTimeout,
-            long timerExpire,
+            TimeoutTimer timerExpire,
             out byte[] instanceName,
             byte[] spnBuffer,
             bool flushCache,
@@ -297,13 +298,13 @@ namespace Microsoft.Data.SqlClient
 
             // Translate to SNI timeout values (Int32 milliseconds)
             long timeout;
-            if (long.MaxValue == timerExpire)
+            if (long.MaxValue == timerExpire.LegacyTimerExpire)
             {
                 timeout = int.MaxValue;
             }
             else
             {
-                timeout = ADP.TimerRemainingMilliseconds(timerExpire);
+                timeout = ADP.TimerRemainingMilliseconds(timerExpire.LegacyTimerExpire);
                 if (timeout > int.MaxValue)
                 {
                     timeout = int.MaxValue;
@@ -3339,7 +3340,7 @@ namespace Microsoft.Data.SqlClient
                     {
                         if (object.ReferenceEquals(packet.Buffer, buffer))
                         {
-                            Debug.Assert(false,"buffer is already present in packet list");
+                            Debug.Assert(false, "buffer is already present in packet list");
                         }
                     }
                 }

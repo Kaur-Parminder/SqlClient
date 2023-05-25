@@ -16,6 +16,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Xml;
 using Microsoft.Data.Common;
+using Microsoft.Data.ProviderBase;
 using Microsoft.Data.Sql;
 using Microsoft.Data.SqlClient.DataClassification;
 using Microsoft.Data.SqlClient.Server;
@@ -362,9 +363,10 @@ namespace Microsoft.Data.SqlClient
             ServerInfo serverInfo,
             SqlInternalConnectionTds connHandler,
             bool ignoreSniOpenTimeout,
-            long timerExpire,
+            TimeoutTimer timerExpire,
             SqlConnectionString connectionOptions,
-            bool withFailover)
+            bool withFailover,
+            DataSource details)
         {
             SqlConnectionEncryptOption encrypt = connectionOptions.Encrypt;
             bool isTlsFirst = (encrypt == SqlConnectionEncryptOption.Strict);
@@ -456,6 +458,7 @@ namespace Microsoft.Data.SqlClient
                 FQDNforDNSCache,
                 ref _connHandler.pendingSQLDNSObject,
                 serverInfo.ServerSPN,
+                details,
                 integratedSecurity || authType == SqlAuthenticationMethod.ActiveDirectoryIntegrated,
                 isTlsFirst,
                 hostNameInCertificate,
@@ -489,7 +492,7 @@ namespace Microsoft.Data.SqlClient
             }
             _state = TdsParserState.OpenNotLoggedIn;
             _physicalStateObj.SniContext = SniContext.Snix_PreLoginBeforeSuccessfulWrite;
-            _physicalStateObj.TimeoutTime = timerExpire;
+            _physicalStateObj.TimeoutTime = timerExpire.LegacyTimerExpire;
 
             bool marsCapable = false;
 
@@ -554,6 +557,7 @@ namespace Microsoft.Data.SqlClient
                     FQDNforDNSCache,
                     ref _connHandler.pendingSQLDNSObject,
                     serverInfo.ServerSPN,
+                    details,
                     integratedSecurity,
                     isTlsFirst,
                     hostNameInCertificate,
@@ -1532,12 +1536,6 @@ namespace Microsoft.Data.SqlClient
                         //
                         errorMessage = SQL.GetSNIErrorMessage((int)details.sniErrorNumber);
 
-                        // If its a LocalDB error, then nativeError actually contains a LocalDB-specific error code, not a win32 error code
-                        if (details.sniErrorNumber == (int)SNINativeMethodWrapper.SniSpecialErrors.LocalDBErrorCode)
-                        {
-                            errorMessage += LocalDBAPI.GetLocalDBMessage((int)details.nativeError);
-                            win32ErrorCode = 0;
-                        }
                     }
                 }
                 errorMessage = string.Format("{0} (provider: {1}, error: {2} - {3})",
@@ -12573,7 +12571,7 @@ namespace Microsoft.Data.SqlClient
                 return true;       // No data
             }
 
-            Debug.Assert(((ulong)stateObj._longlen != TdsEnums.SQL_PLP_NULL),"Out of sync plp read request");
+            Debug.Assert(((ulong)stateObj._longlen != TdsEnums.SQL_PLP_NULL), "Out of sync plp read request");
 
             Debug.Assert((buff == null && offst == 0) || (buff.Length >= offst + len), "Invalid length sent to ReadPlpUnicodeChars()!");
             charsLeft = len;

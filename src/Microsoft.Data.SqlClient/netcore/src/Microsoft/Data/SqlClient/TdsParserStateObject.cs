@@ -9,6 +9,7 @@ using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Common;
+using Microsoft.Data.ProviderBase;
 
 namespace Microsoft.Data.SqlClient
 {
@@ -19,7 +20,7 @@ namespace Microsoft.Data.SqlClient
         // Timeout variables
         private readonly WeakReference _cancellationOwner = new WeakReference(null);
 
-		// Async
+        // Async
         private StateSnapshot _cachedSnapshot;
         private SnapshottedStateFlags _snapshottedState;
 
@@ -198,7 +199,7 @@ namespace Microsoft.Data.SqlClient
         internal abstract void CreatePhysicalSNIHandle(
             string serverName,
             bool ignoreSniOpenTimeout,
-            long timerExpire,
+            TimeoutTimer timerExpire,
             out byte[] instanceName,
             ref byte[][] spnBuffer,
             bool flushCache,
@@ -208,6 +209,7 @@ namespace Microsoft.Data.SqlClient
             string cachedFQDN,
             ref SQLDNSInfo pendingDNSInfo,
             string serverSPN,
+            DataSource dataSourceDetails,
             bool isIntegratedSecurity = false,
             bool tlsFirst = false,
             string hostNameInCertificate = "",
@@ -484,7 +486,7 @@ namespace Microsoft.Data.SqlClient
 
             AssertValidState();
             value = (char)((buffer[1] << 8) + buffer[0]);
-            
+
             return true;
         }
 
@@ -1511,7 +1513,7 @@ namespace Microsoft.Data.SqlClient
                     Timeout.Infinite,
                     Timeout.Infinite
                 );
-                
+
 
                 // -1 == Infinite
                 //  0 == Already timed out (NOTE: To simulate the same behavior as sync we will only timeout on 0 if we receive an IO Pending from SNI)
@@ -1919,7 +1921,7 @@ namespace Microsoft.Data.SqlClient
                 Debug.Assert(CheckPacket(packet, source) && source != null, "AsyncResult null on callback");
 
                 if (_parser.MARSOn)
-                { 
+                {
                     // Only take reset lock on MARS and Async.
                     CheckSetResetConnectionState(error, CallbackType.Read);
                 }
@@ -2609,35 +2611,35 @@ namespace Microsoft.Data.SqlClient
                     if (!s_skipSendAttention)
                     {
 #endif
-                        // Take lock and send attention
-                        bool releaseLock = false;
-                        if ((mustTakeWriteLock) && (!_parser.Connection.ThreadHasParserLockForClose))
+                    // Take lock and send attention
+                    bool releaseLock = false;
+                    if ((mustTakeWriteLock) && (!_parser.Connection.ThreadHasParserLockForClose))
+                    {
+                        releaseLock = true;
+                        _parser.Connection._parserLock.Wait(canReleaseFromAnyThread: false);
+                        _parser.Connection.ThreadHasParserLockForClose = true;
+                    }
+                    try
+                    {
+                        // Check again (just in case the connection was closed while we were waiting)
+                        if (_parser.State == TdsParserState.Closed || _parser.State == TdsParserState.Broken)
                         {
-                            releaseLock = true;
-                            _parser.Connection._parserLock.Wait(canReleaseFromAnyThread: false);
-                            _parser.Connection.ThreadHasParserLockForClose = true;
+                            return;
                         }
-                        try
-                        {
-                            // Check again (just in case the connection was closed while we were waiting)
-                            if (_parser.State == TdsParserState.Closed || _parser.State == TdsParserState.Broken)
-                            {
-                                return;
-                            }
 
-                            uint sniError;
-                            _parser._asyncWrite = false; // stop async write
-                            SNIWritePacket(attnPacket, out sniError, canAccumulate: false, callerHasConnectionLock: false, asyncClose);
-                            SqlClientEventSource.Log.TryTraceEvent("TdsParserStateObject.SendAttention | Info | State Object Id {0}, Sent Attention.", _objectID);
-                        }
-                        finally
+                        uint sniError;
+                        _parser._asyncWrite = false; // stop async write
+                        SNIWritePacket(attnPacket, out sniError, canAccumulate: false, callerHasConnectionLock: false, asyncClose);
+                        SqlClientEventSource.Log.TryTraceEvent("TdsParserStateObject.SendAttention | Info | State Object Id {0}, Sent Attention.", _objectID);
+                    }
+                    finally
+                    {
+                        if (releaseLock)
                         {
-                            if (releaseLock)
-                            {
-                                _parser.Connection.ThreadHasParserLockForClose = false;
-                                _parser.Connection._parserLock.Release();
-                            }
+                            _parser.Connection.ThreadHasParserLockForClose = false;
+                            _parser.Connection._parserLock.Release();
                         }
+                    }
 #if DEBUG
                 }
 #endif

@@ -8,9 +8,11 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Common;
+using Microsoft.Data.ProviderBase;
 
 namespace Microsoft.Data.SqlClient.SNI
 {
@@ -78,7 +80,7 @@ namespace Microsoft.Data.SqlClient.SNI
         internal override void CreatePhysicalSNIHandle(
             string serverName,
             bool ignoreSniOpenTimeout,
-            long timerExpire,
+            TimeoutTimer timerExpire,
             out byte[] instanceName,
             ref byte[][] spnBuffer,
             bool flushCache,
@@ -88,14 +90,16 @@ namespace Microsoft.Data.SqlClient.SNI
             string cachedFQDN,
             ref SQLDNSInfo pendingDNSInfo,
             string serverSPN,
+            DataSource details,
             bool isIntegratedSecurity,
             bool tlsFirst,
             string hostNameInCertificate,
             string serverCertificateFilename)
         {
-            SNIHandle? sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire, out instanceName, ref spnBuffer, serverSPN,
-                flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
-                hostNameInCertificate, serverCertificateFilename);
+            SNIHandle? sessionHandle = SNIProxy.CreateConnectionHandle(serverName, ignoreSniOpenTimeout, timerExpire.LegacyTimerExpire, out instanceName, ref spnBuffer, serverSPN,
+                    flushCache, async, parallel, isIntegratedSecurity, iPAddressPreference, cachedFQDN, ref pendingDNSInfo, tlsFirst,
+                    hostNameInCertificate, serverCertificateFilename, details);
+
 
             if (sessionHandle is not null)
             {

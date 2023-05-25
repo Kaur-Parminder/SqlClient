@@ -24,6 +24,7 @@ using Microsoft.Data.SqlClient.DataClassification;
 using Microsoft.Data.SqlClient.Server;
 using Microsoft.Data.SqlTypes;
 using Microsoft.SqlServer.Server;
+using Microsoft.Data.ProviderBase;
 
 namespace Microsoft.Data.SqlClient
 {
@@ -495,7 +496,7 @@ namespace Microsoft.Data.SqlClient
         internal void Connect(ServerInfo serverInfo,
                               SqlInternalConnectionTds connHandler,
                               bool ignoreSniOpenTimeout,
-                              long timerExpire,
+                              TimeoutTimer timerExpire,
                               SqlConnectionString connectionOptions,
                               bool withFailover,
                               bool isFirstTransparentAttempt,
@@ -537,7 +538,8 @@ namespace Microsoft.Data.SqlClient
             //Create LocalDB instance if necessary
             if (connHandler.ConnectionOptions.LocalDBInstance != null)
             {
-                LocalDBAPI.CreateLocalDBInstance(connHandler.ConnectionOptions.LocalDBInstance);
+                bool errorWithLocalDBProcessing = false;
+                LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timerExpire, out errorWithLocalDBProcessing);
                 if (encrypt == SqlConnectionEncryptOption.Mandatory)
                 {
                     // Encryption is not supported on SQL Local DB - disable it for current session.
@@ -681,7 +683,7 @@ namespace Microsoft.Data.SqlClient
             }
             _state = TdsParserState.OpenNotLoggedIn;
             _physicalStateObj.SniContext = SniContext.Snix_PreLoginBeforeSuccessfulWrite; // SQL BU DT 376766
-            _physicalStateObj.TimeoutTime = timerExpire;
+            _physicalStateObj.TimeoutTime = timerExpire.LegacyTimerExpire;
 
             bool marsCapable = false;
 
@@ -1934,13 +1936,6 @@ namespace Microsoft.Data.SqlClient
                 // SNI error. Replace the entire message
                 //
                 errorMessage = SQL.GetSNIErrorMessage((int)sniError.sniError);
-
-                // If its a LocalDB error, then nativeError actually contains a LocalDB-specific error code, not a win32 error code
-                if (sniError.sniError == (int)SNINativeMethodWrapper.SniSpecialErrors.LocalDBErrorCode)
-                {
-                    errorMessage += LocalDBAPI.GetLocalDBMessage((int)sniError.nativeError);
-                    win32ErrorCode = 0;
-                }
             }
             errorMessage = string.Format("{0} (provider: {1}, error: {2} - {3})",
                 sqlContextInfo, providerName, (int)sniError.sniError, errorMessage);
@@ -8856,7 +8851,7 @@ namespace Microsoft.Data.SqlClient
                                TdsEnums.FeatureExtension requestedFeatures,
                                SessionData recoverySessionData,
                                FederatedAuthenticationFeatureExtensionData fedAuthFeatureExtensionData,
-                               SqlClientOriginalNetworkAddressInfo originalNetworkAddressInfo, 
+                               SqlClientOriginalNetworkAddressInfo originalNetworkAddressInfo,
                                SqlConnectionEncryptOption encrypt)
         {
             _physicalStateObj.SetTimeoutSeconds(rec.timeout);

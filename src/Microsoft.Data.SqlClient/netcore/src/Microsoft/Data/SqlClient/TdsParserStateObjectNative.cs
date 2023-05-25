@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using Microsoft.Data.Common;
 using System.Net;
 using System.Text;
+using Microsoft.Data.ProviderBase;
 
 namespace Microsoft.Data.SqlClient
 {
@@ -141,7 +142,7 @@ namespace Microsoft.Data.SqlClient
         internal override void CreatePhysicalSNIHandle(
             string serverName,
             bool ignoreSniOpenTimeout,
-            long timerExpire,
+            TimeoutTimer timerExpire,
             out byte[] instanceName,
             ref byte[][] spnBuffer,
             bool flushCache,
@@ -151,6 +152,7 @@ namespace Microsoft.Data.SqlClient
             string cachedFQDN,
             ref SQLDNSInfo pendingDNSInfo,
             string serverSPN,
+            DataSource dataSource,
             bool isIntegratedSecurity,
             bool tlsFirst,
             string hostNameInCertificate,
@@ -167,7 +169,7 @@ namespace Microsoft.Data.SqlClient
                     byte[] srvSPN = Encoding.Unicode.GetBytes(serverSPN);
                     Trace.Assert(srvSPN.Length <= SNINativeMethodWrapper.SniMaxComposedSpnLength, "Length of the provided SPN exceeded the buffer size.");
                     spnBuffer[0] = srvSPN;
-                    SqlClientEventSource.Log.TryTraceEvent("<{0}.{1}|SEC> Server SPN `{2}` from the connection string is used.",nameof(TdsParserStateObjectNative), nameof(CreatePhysicalSNIHandle), serverSPN);
+                    SqlClientEventSource.Log.TryTraceEvent("<{0}.{1}|SEC> Server SPN `{2}` from the connection string is used.", nameof(TdsParserStateObjectNative), nameof(CreatePhysicalSNIHandle), serverSPN);
                 }
                 else
                 {
@@ -179,13 +181,13 @@ namespace Microsoft.Data.SqlClient
 
             // Translate to SNI timeout values (Int32 milliseconds)
             long timeout;
-            if (long.MaxValue == timerExpire)
+            if (long.MaxValue == timerExpire.LegacyTimerExpire)
             {
                 timeout = int.MaxValue;
             }
             else
             {
-                timeout = ADP.TimerRemainingMilliseconds(timerExpire);
+                timeout = ADP.TimerRemainingMilliseconds(timerExpire.LegacyTimerExpire);
                 if (timeout > int.MaxValue)
                 {
                     timeout = int.MaxValue;
