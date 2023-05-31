@@ -194,7 +194,7 @@ namespace Microsoft.Data.SqlClient
         {
                    return new SqlErrorCollection
                     {
-                        new SqlError(InvalidConnStringError, 0, TdsEnums.FATAL_ERROR_CLASS, ServerName, string.Format("(provider: {0}, error: {1} - {2})",
+                        new SqlError(InvalidConnStringError, 0, TdsEnums.MIN_ERROR_CLASS, ServerName, string.Format("(provider: {0}, error: {1} - {2})",
                     providerName, InvalidConnStringError, Strings.SNI_ERROR_25), null, 0)
                     };       
         }
