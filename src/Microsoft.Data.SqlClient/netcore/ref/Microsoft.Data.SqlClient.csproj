@@ -16,9 +16,6 @@
     <Compile Include="Microsoft.Data.SqlClient.cs" />
     <Compile Include="Microsoft.Data.SqlClient.Manual.cs" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetGroup)' == 'netcoreapp'">
-    <PackageReference Include="System.Security.Cryptography.Cng" Version="$(SystemSecurityCryptographyCngVersion)" />
-  </ItemGroup>
   <ItemGroup Condition="'$(TargetGroup)' == 'netstandard'">
     <Compile Include="Microsoft.Data.SqlClient.NetStandard.cs" />
   </ItemGroup>
