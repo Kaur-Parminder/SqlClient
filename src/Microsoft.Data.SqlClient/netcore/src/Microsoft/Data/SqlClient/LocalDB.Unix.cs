@@ -12,12 +12,12 @@ namespace Microsoft.Data.SqlClient
     {
         internal static string GetLocalDBConnectionString(string localDbInstance)
         {
-            throw ADP.LocalDBNotSUpportedException();
+            throw ADP.LocalDBNotSupportedException();
         }
 
         internal static string GetLocalDBDataSource(string fullServerName, TimeoutTimer timeout)
         {
-            throw ADP.LocalDBNotSUpportedException();
+            throw ADP.LocalDBNotSupportedException();
         }
     }
 }

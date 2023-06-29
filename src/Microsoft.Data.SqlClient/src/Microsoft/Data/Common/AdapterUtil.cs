@@ -1267,7 +1267,7 @@ namespace Microsoft.Data.Common
 
         static internal Exception InvalidMixedUsageOfCredentialAndAccessToken()
             => InvalidOperation(StringsHelper.GetString(Strings.ADP_InvalidMixedUsageOfCredentialAndAccessToken));
-#endregion
+        #endregion
 
         internal static bool IsEmpty(string str) => string.IsNullOrEmpty(str);
         internal static readonly IntPtr s_ptrZero = IntPtr.Zero;
@@ -1497,7 +1497,11 @@ namespace Microsoft.Data.Common
 
 #endregion
 #else
-#region netcore project only
+        #region netcore project only
+
+        internal static PlatformNotSupportedException LocalDBNotSupportedException() =>
+            new PlatformNotSupportedException(Strings.LocalDBNotSupported); // LocalDB is not available for Unix and hence it cannot be supported.
+        
         internal static Timer UnsafeCreateTimer(TimerCallback callback, object state, int dueTime, int period)
         {
             // Don't capture the current ExecutionContext and its AsyncLocals onto 

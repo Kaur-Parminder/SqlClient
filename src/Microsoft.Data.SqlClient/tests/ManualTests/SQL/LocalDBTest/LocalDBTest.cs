@@ -33,6 +33,13 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             ConnectionTest(s_localDbConnectionString);
         }
 
+        [PlatformSpecific(TestPlatforms.AnyUnix)]
+        [Fact]
+        public static void SqlLocalDbConnectionTestNotSupportedException()
+        {
+            ConnectionTest(s_localDbConnectionString);
+        }
+
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
         [ConditionalFact(nameof(IsLocalDBEnvironmentSet))]
         public static void LocalDBEncryptionNotSupportedTest()

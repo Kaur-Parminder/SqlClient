@@ -22,8 +22,5 @@ namespace Microsoft.Data.Common
             // No registry in non-Windows environments
             return null;
         }
-
-        internal static PlatformNotSupportedException LocalDBNotSUpportedException() =>
-            new PlatformNotSupportedException(Strings.LocalDBNotSupported); // LocalDB is not available for Unix and hence it cannot be supported.
     }
 }

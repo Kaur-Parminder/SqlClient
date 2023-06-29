@@ -1920,6 +1920,12 @@ namespace Microsoft.Data.SqlClient
                 {
                     localDBDataSource = LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timeout);
                 }
+#if NETCOREAPP
+                else
+                {
+                    throw ADP.LocalDBNotSupportedException();
+                }
+#endif
             }
 
             string serverName = localDBDataSource ?? serverInfo.ExtendedServerName;
@@ -2305,7 +2311,7 @@ namespace Microsoft.Data.SqlClient
             bool authenticationContextLocked = false;
 
             // Prepare CER to ensure the lock on authentication context is released.
-#if !NET6_0_OR_GREATER          
+#if !NET6_0_OR_GREATER
             RuntimeHelpers.PrepareConstrainedRegions();
 #endif
             try
