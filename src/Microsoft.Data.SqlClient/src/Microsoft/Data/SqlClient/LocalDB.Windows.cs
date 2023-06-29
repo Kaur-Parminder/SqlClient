@@ -3,14 +3,12 @@
 // See the LICENSE file in the project root for more information.
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.Data.ProviderBase;
 using Microsoft.Win32;
 using Microsoft.Win32.SafeHandles;
@@ -20,23 +18,30 @@ namespace Microsoft.Data.SqlClient
     internal sealed class LocalDB
     {
         private static readonly LocalDB Instance = new LocalDB();
-        private const string s_className = nameof(LocalDB);
+        private const string ClassName = nameof(LocalDB);
         //HKEY_LOCAL_MACHINE
         private const string LocalDBInstalledVersionRegistryKey = "SOFTWARE\\Microsoft\\Microsoft SQL Server Local DB\\Installed Versions\\";
+
+        // Set a non-infinite timeout on the regex to ensure we never hang. 10 seconds should
+        // be more than enough as a fail-safe for the small amount of text that is going to be processed. Since
+        // we can't set the timeout on each Match() call, this prioritizes perf (RegexOptions.Compiled) over
+        // the small possiblity that we might go a little over a connect timeout during extremely high load.
+        private static readonly Regex regex = new Regex("(np:.+)\r", RegexOptions.Compiled | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(10));
+
         private const string InstanceAPIPathValueName = "InstanceAPIPath";
         private const string ProcLocalDBStartInstance = "LocalDBStartInstance";
         private const int MAX_LOCAL_DB_CONNECTION_STRING_SIZE = 260;
         private IntPtr _startInstanceHandle = IntPtr.Zero;
         private static Lazy<string> s_sqlLocalDBExe = new Lazy<string>(() => GetPathToSqlLocalDB());
-       
+
         // Local Db api doc https://msdn.microsoft.com/en-us/library/hh217143.aspx
         // HRESULT LocalDBStartInstance( [Input ] PCWSTR pInstanceName, [Input ] DWORD dwFlags,[Output] LPWSTR wszSqlConnection,[Input/Output] LPDWORD lpcchSqlConnection);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate int LocalDBStartInstance(
-                [In] [MarshalAs(UnmanagedType.LPWStr)] string localDBInstanceName,
-                [In]  int flags,
-                [Out] [MarshalAs(UnmanagedType.LPWStr)] StringBuilder sqlConnectionDataSource,
-                [In, Out]ref int bufferLength);
+                [In][MarshalAs(UnmanagedType.LPWStr)] string localDBInstanceName,
+                [In] int flags,
+                [Out][MarshalAs(UnmanagedType.LPWStr)] StringBuilder sqlConnectionDataSource,
+                [In, Out] ref int bufferLength);
 
         private LocalDBStartInstance localDBStartInstanceFunc = null;
 
@@ -48,13 +53,13 @@ namespace Microsoft.Data.SqlClient
         {
             try
             {
-              //  throw new Exception();
-                return Instance.LoadUserInstanceDll() ? Instance.GetConnectionString(localDbInstance) : null;
+                throw new Exception();
+                //               return Instance.LoadUserInstanceDll() ? Instance.GetConnectionString(localDbInstance) : null;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                SqlClientEventSource.Log.TryTraceEvent(s_className, EventType.ERR,ex?.Message);
-                SqlClientEventSource.Log.TryTraceEvent(s_className, EventType.INFO, "Falling back to use SqlLocalDB.exe.");
+                SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.ERR, ex?.Message);
+                SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.INFO, "Falling back to use SqlLocalDB.exe.");
 
                 // The old logic to load the SqlUserInstance.dll did not quite work possibly because
                 // of an archiecture mismatch (e.g. we are running in an ARM64 process and SqlLocalDB.exe
@@ -63,14 +68,14 @@ namespace Microsoft.Data.SqlClient
 
                 if (!TryGetLocalDBConnectionStringUsingSqlLocalDBExe(localDbInstance, timeout, out string connString))
                 {
-                    SqlClientEventSource.Log.TryTraceEvent(s_className, EventType.ERR, "Unable to to use SqlLocalDB.exe to get the ConnectionString.");
+                    SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.ERR, "Unable to to use SqlLocalDB.exe to get the ConnectionString.");
                     throw;
                 }
 
                 return connString;
             }
         }
-    
+
         private static string GetPathToSqlLocalDB()
         {
             RegistryKey mssqlRegKey = null;
@@ -80,13 +85,23 @@ namespace Microsoft.Data.SqlClient
                 mssqlRegKey = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Microsoft SQL Server");
                 if (mssqlRegKey != null)
                 {
-                    foreach (var item in mssqlRegKey.GetSubKeyNames().Where(x => int.TryParse(x, out var _)).OrderByDescending(_ => _))
+                    string[] alphaNumnericKeys = mssqlRegKey.GetSubKeyNames();
+                    List<int> intKeys = new List<int>();
+                    for (int i = 0; i < alphaNumnericKeys.Length; i++)
                     {
-                        using (var sk = mssqlRegKey.OpenSubKey($@"{item}\Tools\\ClientSetup", writable: false))
+                        if (int.TryParse(alphaNumnericKeys[i], out int intKey))
+                        {
+                            intKeys.Add(intKey);
+                        }
+                    }
+
+                    for (int item = intKeys.Count - 1; item >= 0; item--)
+                    {
+                        using (RegistryKey sk = mssqlRegKey.OpenSubKey($@"{intKeys[item]}\Tools\\ClientSetup", writable: false))
                         {
                             if (sk.GetValue("Path") is string value)
                             {
-                                var path = Path.Combine(value, "SqlLocalDB.exe");
+                                string path = Path.Combine(value, "SqlLocalDB.exe");
                                 if (File.Exists(path))
                                 {
                                     return path;
@@ -94,12 +109,11 @@ namespace Microsoft.Data.SqlClient
                             }
                         }
                     }
-
                 }
             }
             catch
             {
-                SqlClientEventSource.Log.TryTraceEvent(s_className, EventType.ERR, "No File path exist for SqlLocalDB.exe under Registry key.");               
+                SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.ERR, "No File path exist for SqlLocalDB.exe under Registry key.");
             }
             finally
             {
@@ -118,8 +132,7 @@ namespace Microsoft.Data.SqlClient
         }
         private static bool TryGetLocalDBConnectionStringUsingSqlLocalDBExe(string localDbInstance, TimeoutTimer timeout, out string connString)
         {
-           Regex regex = new Regex("(np:.+)\r", RegexOptions.Compiled | RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(timeout.MillisecondsRemaining));
-           connString = null;
+            connString = null;
             try
             {
                 // Make sure the instance is running first. If it is, this call won't do any harm, aside from
@@ -134,38 +147,40 @@ namespace Microsoft.Data.SqlClient
 
                 var proc = Process.Start(psi);
 
-                proc.WaitForExit(milliseconds: (int)timeout.MillisecondsRemaining);
-
-                psi = new ProcessStartInfo(s_sqlLocalDBExe.Value, $"i \"{localDbInstance}\"")
+                if (proc.WaitForExit(milliseconds: timeout.MillisecondsRemainingInt))
                 {
-                    UseShellExecute = false,
-                    RedirectStandardOutput = true,
-                    CreateNoWindow = true,
-                    WindowStyle = ProcessWindowStyle.Hidden
-                };
+                    psi = new ProcessStartInfo(s_sqlLocalDBExe.Value, $"i \"{localDbInstance}\"")
+                    {
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
 
-                proc = Process.Start(psi);
+                    proc = Process.Start(psi);
 
-                proc.WaitForExit(milliseconds: (int)timeout.MillisecondsRemaining);
+                    if (proc.WaitForExit(milliseconds: timeout.MillisecondsRemainingInt))
+                    {
+                        var alllines = proc.StandardOutput.ReadToEnd();
 
-                var alllines = proc.StandardOutput.ReadToEnd();
+                        SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.INFO, $"Called: {s_sqlLocalDBExe.Value} \"{localDbInstance}\"");
 
-                SqlClientEventSource.Log.TryTraceEvent(s_className, EventType.INFO, $"Called: {s_sqlLocalDBExe.Value} \"{localDbInstance}\"");
-
-                Match match = regex.Match(alllines);
-                if (match.Success)
-                {
-                    connString = match.Value.Trim();
-                    return true;
-                }
-                else
-                {
-                    SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.INFO, "No match found for named pipe SqlLocalDB.exe process stdout.");
+                        Match match = regex.Match(alllines);
+                        if (match.Success)
+                        {
+                            connString = match.Value.Trim();
+                            return true;
+                        }
+                        else
+                        {
+                            SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.INFO, "No match found for named pipe SqlLocalDB.exe process stdout.");
+                        }
+                    }
                 }
             }
-            catch(RegexMatchTimeoutException ex)
+            catch (RegexMatchTimeoutException ex)
             {
-                SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Unable to retrieve named pipe SqlLocalDB.exe process stdout, it took longer than the maximum time allowed."+ex?.Message);
+                SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Unable to retrieve named pipe SqlLocalDB.exe process stdout, it took longer than the maximum time allowed." + ex?.Message);
             }
             catch
             {
@@ -179,78 +194,78 @@ namespace Microsoft.Data.SqlClient
         {
             NO_INSTALLATION, INVALID_CONFIG, NO_SQLUSERINSTANCEDLL_PATH, INVALID_SQLUSERINSTANCEDLL_PATH, NONE
         }
-      
+
         /// <summary>
         /// Loads the User Instance dll.
         /// </summary>
         private bool LoadUserInstanceDll()
         {
-                // Check in a non thread-safe way if the handle is already set for performance.
+            // Check in a non thread-safe way if the handle is already set for performance.
+            if (_sqlUserInstanceLibraryHandle != null)
+            {
+                return true;
+            }
+
+            lock (this)
+            {
                 if (_sqlUserInstanceLibraryHandle != null)
                 {
                     return true;
                 }
+                //Get UserInstance Dll path
+                LocalDBErrorState registryQueryErrorState;
 
-                lock (this)
+                // Get the LocalDB instance dll path from the registry
+                string dllPath = GetUserInstanceDllPath(out registryQueryErrorState);
+
+                // If there was no DLL path found, then there is an error.
+                if (dllPath == null)
                 {
-                    if (_sqlUserInstanceLibraryHandle != null)
-                    {
-                        return true;
-                    }
-                    //Get UserInstance Dll path
-                    LocalDBErrorState registryQueryErrorState;
+                    SqlClientEventSource.Log.TraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is null.");
+                    throw new Exception(MapLocalDBErrorStateToErrorMessage(registryQueryErrorState));
+                }
 
-                    // Get the LocalDB instance dll path from the registry
-                    string dllPath = GetUserInstanceDllPath(out registryQueryErrorState);
+                // In case the registry had an empty path for dll
+                if (string.IsNullOrWhiteSpace(dllPath))
+                {
+                    SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is invalid. DLL path = {0}", dllPath);
+                    throw new Exception(Strings.SNI_ERROR_55);
+                }
 
-                    // If there was no DLL path found, then there is an error.
-                    if (dllPath == null)
-                    {
-                        SqlClientEventSource.Log.TraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is null.");
-                        throw new Exception(MapLocalDBErrorStateToErrorMessage(registryQueryErrorState));
-                    }
+                // Load the dll
+                SafeLibraryHandle libraryHandle = Interop.Kernel32.LoadLibraryExW(dllPath.Trim(), IntPtr.Zero, 0);
 
-                    // In case the registry had an empty path for dll
-                    if (string.IsNullOrWhiteSpace(dllPath))
-                    {
-                        SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "User instance DLL path is invalid. DLL path = {0}", dllPath);
-                        throw new Exception(Strings.SNI_ERROR_55);
-                    }
+                if (libraryHandle.IsInvalid)
+                {
+                    SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Library Handle is invalid. Could not load the dll.");
+                    libraryHandle.Dispose();
+                    throw new Exception(Strings.SNI_ERROR_56);
+                }
 
-                    // Load the dll
-                    SafeLibraryHandle libraryHandle = Interop.Kernel32.LoadLibraryExW(dllPath.Trim(), IntPtr.Zero, 0);
+                // Load the procs from the DLLs
+                _startInstanceHandle = Interop.Kernel32.GetProcAddress(libraryHandle, ProcLocalDBStartInstance);
 
-                    if (libraryHandle.IsInvalid)
-                    {
-                        SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Library Handle is invalid. Could not load the dll.");
-                        libraryHandle.Dispose();
-                        throw new Exception(Strings.SNI_ERROR_56);
-                    }
+                if (_startInstanceHandle == IntPtr.Zero)
+                {
+                    SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Was not able to load the PROC from DLL. Bad Runtime.");
+                    libraryHandle.Dispose();
+                    throw new Exception(Strings.SNI_ERROR_57);
+                }
 
-                    // Load the procs from the DLLs
-                    _startInstanceHandle = Interop.Kernel32.GetProcAddress(libraryHandle, ProcLocalDBStartInstance);
+                // Set the delegate the invoke.
+                localDBStartInstanceFunc = (LocalDBStartInstance)Marshal.GetDelegateForFunctionPointer(_startInstanceHandle, typeof(LocalDBStartInstance));
 
-                    if (_startInstanceHandle == IntPtr.Zero)
-                    {
-                        SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.ERR, "Was not able to load the PROC from DLL. Bad Runtime.");
-                        libraryHandle.Dispose();
-                        throw new Exception(Strings.SNI_ERROR_57);
-                    }
+                if (localDBStartInstanceFunc == null)
+                {
+                    libraryHandle.Dispose();
+                    _startInstanceHandle = IntPtr.Zero;
+                    throw new Exception(Strings.SNI_ERROR_57);
+                }
 
-                    // Set the delegate the invoke.
-                    localDBStartInstanceFunc = (LocalDBStartInstance)Marshal.GetDelegateForFunctionPointer(_startInstanceHandle, typeof(LocalDBStartInstance));
-
-                    if (localDBStartInstanceFunc == null)
-                    {
-                        libraryHandle.Dispose();
-                        _startInstanceHandle = IntPtr.Zero;
-                        throw new Exception(Strings.SNI_ERROR_57);
-                    }
-
-                    _sqlUserInstanceLibraryHandle = libraryHandle;
-                    SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.INFO, "User Instance DLL was loaded successfully.");
-                    return true;
-                }            
+                _sqlUserInstanceLibraryHandle = libraryHandle;
+                SqlClientEventSource.Log.TryTraceEvent(nameof(LocalDB), EventType.INFO, "User Instance DLL was loaded successfully.");
+                return true;
+            }
         }
 
         /// <summary>
