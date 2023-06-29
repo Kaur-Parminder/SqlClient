@@ -53,8 +53,7 @@ namespace Microsoft.Data.SqlClient
         {
             try
             {
-                throw new Exception();
-                //               return Instance.LoadUserInstanceDll() ? Instance.GetConnectionString(localDbInstance) : null;
+                return Instance.LoadUserInstanceDll() ? Instance.GetConnectionString(localDbInstance) : null;
             }
             catch (Exception ex)
             {
