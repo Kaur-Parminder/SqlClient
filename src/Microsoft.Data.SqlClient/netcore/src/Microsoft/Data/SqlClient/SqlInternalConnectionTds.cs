@@ -1920,7 +1920,7 @@ namespace Microsoft.Data.SqlClient
                 {
                     localDBDataSource = LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timeout);
                 }
-#if NETCOREAPP
+#if NETCOREAPP || NETSTANDARD
                 else
                 {
                     throw ADP.LocalDBNotSupportedException();
