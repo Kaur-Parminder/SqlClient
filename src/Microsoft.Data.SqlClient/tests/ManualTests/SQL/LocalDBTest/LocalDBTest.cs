@@ -23,7 +23,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         private static readonly string s_commandPrompt = "cmd.exe";
         private static readonly string s_sqlLocalDbInfo = @$"/c SqlLocalDb info {DataTestUtility.LocalDbAppName}";
         private static readonly string s_startLocalDbCommand = @$"/c SqlLocalDb start {DataTestUtility.LocalDbAppName}";
-        private static readonly string s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
+  //      private static readonly string s_localDbNamedPipeConnectionString = @$"server={GetLocalDbNamedPipe()}";
 
         #region LocalDbTests
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
@@ -111,7 +111,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ActiveIssue(20245)] //pending pipeline configuration
         public static void SqlLocalDbNamedPipeConnectionTest()
         {
-            ConnectionTest(s_localDbNamedPipeConnectionString);
+            ConnectionTest(GetLocalDbNamedPipe());
         }
 
         [Fact]
@@ -121,7 +121,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             // Encryption is not supported by SQL Local DB.
             // But connection should succeed as encryption is disabled by driver.
-            ConnectionWithEncryptionTest(s_localDbNamedPipeConnectionString);
+            ConnectionWithEncryptionTest(GetLocalDbNamedPipe());
         }
 
         [Fact]
@@ -129,7 +129,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ActiveIssue(20245)] //pending pipeline configuration
         public static void LocalDBNamepipeMarsTest()
         {
-            ConnectionWithMarsTest(s_localDbNamedPipeConnectionString);
+            ConnectionWithMarsTest(GetLocalDbNamedPipe());
         }
 
         #endregion
