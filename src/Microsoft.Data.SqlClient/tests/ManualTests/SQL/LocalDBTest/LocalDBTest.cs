@@ -37,7 +37,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [Fact]
         public static void SqlLocalDbConnectionTestNotSupportedException()
         {
-            Assert.Throws<LocalDBNotStartedException>(() => OpenConnection(s_localDbNamedPipeConnectionString));           
+            Assert.Throws<LocalDBNotStartedException>(() => OpenConnection(s_localDbConnectionString));           
         }
 
         [SkipOnTargetFramework(TargetFrameworkMonikers.Uap)] // No Registry support on UAP
