@@ -148,7 +148,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         {
             SqlConnectionStringBuilder builder = new(connectionString)
             {
-                IntegratedSecurity = true
+                IntegratedSecurity = true,
                 Encrypt = SqlConnectionEncryptOption.Mandatory
             };
             OpenConnection(builder.ConnectionString);
