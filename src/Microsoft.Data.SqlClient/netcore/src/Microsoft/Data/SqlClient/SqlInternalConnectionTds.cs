@@ -1919,13 +1919,11 @@ namespace Microsoft.Data.SqlClient
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     localDBDataSource = LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timeout);
-                    string serverName = localDBDataSource ?? serverInfo.ExtendedServerName;
-                    details = DataSource.ParseServerName(serverName);
-
+                
                     //re-writing serverinfo 
                     ServerInfo original = serverInfo;
-                    serverInfo = new ServerInfo(ConnectionOptions, serverName, original.ServerSPN);
-                    serverInfo.SetDerivedNames(original.UserProtocol, serverName);
+                    serverInfo = new ServerInfo(ConnectionOptions, localDBDataSource, original.ServerSPN);
+                    serverInfo.SetDerivedNames(original.UserProtocol, localDBDataSource);
                 }
 #if NETCOREAPP || NETSTANDARD
                 else
@@ -1934,6 +1932,9 @@ namespace Microsoft.Data.SqlClient
                 }
 #endif
             }
+            string serverName = localDBDataSource ?? serverInfo.ExtendedServerName;
+            details = DataSource.ParseServerName(serverName);
+
 
             _parser._physicalStateObj.SniContext = SniContext.Snix_Connect;
 
