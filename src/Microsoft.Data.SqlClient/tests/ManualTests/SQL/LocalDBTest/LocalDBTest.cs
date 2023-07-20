@@ -37,7 +37,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [Fact]
         public static void SqlLocalDbConnectionTestNotSupportedException()
         {
-            Assert.Throws<LocalDBNotStartedException>(() =>
+            Assert.Throws<NotSupportedException>(() =>
             {
                 using SqlConnection connection = new(s_localDbConnectionString);
                 connection.Open();

@@ -1918,23 +1918,26 @@ namespace Microsoft.Data.SqlClient
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    localDBDataSource = LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timeout);
-                
-                    //re-writing serverinfo 
-                    ServerInfo original = serverInfo;
-                    serverInfo = new ServerInfo(ConnectionOptions, localDBDataSource, original.ServerSPN);
-                    serverInfo.SetDerivedNames(original.UserProtocol, localDBDataSource);
+                    //do not get np result if data source is already np
+                    string[] splitByColon = serverInfo.UserServerName.Split(':');
+                    if (!splitByColon[0].Trim().Equals("np", StringComparison.CurrentCultureIgnoreCase))
+                    {
+                        localDBDataSource = LocalDB.GetLocalDBDataSource(serverInfo.UserServerName, timeout);
+                        //re-writing serverinfo to make NP as servername
+                        ServerInfo original = serverInfo;
+                        serverInfo = new ServerInfo(ConnectionOptions, localDBDataSource, original.ServerSPN);
+                        serverInfo.SetDerivedNames(original.UserProtocol, localDBDataSource);
+                    }
                 }
 #if NETCOREAPP || NETSTANDARD
                 else
                 {
-                    throw ADP.LocalDBNotSupportedException();
+                    throw new NotSupportedException();
                 }
 #endif
             }
             string serverName = localDBDataSource ?? serverInfo.ExtendedServerName;
             details = DataSource.ParseServerName(serverName);
-
 
             _parser._physicalStateObj.SniContext = SniContext.Snix_Connect;
 
