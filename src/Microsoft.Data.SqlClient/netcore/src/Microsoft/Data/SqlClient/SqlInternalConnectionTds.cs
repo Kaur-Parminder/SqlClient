@@ -1929,12 +1929,10 @@ namespace Microsoft.Data.SqlClient
                         serverInfo.SetDerivedNames(original.UserProtocol, localDBDataSource);
                     }
                 }
-#if NETCOREAPP || NETSTANDARD
                 else
                 {
                     throw new NotSupportedException();
                 }
-#endif
             }
             string serverName = localDBDataSource ?? serverInfo.ExtendedServerName;
             details = DataSource.ParseServerName(serverName);
