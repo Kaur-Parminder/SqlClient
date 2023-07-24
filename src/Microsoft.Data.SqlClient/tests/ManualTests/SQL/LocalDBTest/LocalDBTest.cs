@@ -64,6 +64,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SharedLocalDbEncryptionTest()
         {
+            RestartLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 // Encryption is not supported by SQL Local DB.
@@ -76,6 +77,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SharedLocalDbMarsTest()
         {
+            RestartLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionWithMarsTest(connectionString);
@@ -86,6 +88,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         [ConditionalFact(nameof(IsLocalDbSharedInstanceSet))]
         public static void SqlLocalDbSharedInstanceConnectionTest()
         {
+            RestartLocalDB();
             foreach (string connectionString in s_sharedLocalDbInstances)
             {
                 ConnectionTest(connectionString);
