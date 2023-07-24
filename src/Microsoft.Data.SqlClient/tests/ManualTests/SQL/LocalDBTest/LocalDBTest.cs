@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 using System;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using System.Threading;
 using Xunit;
 
@@ -194,6 +195,55 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
         }
         private static string ExecuteLocalDBCommandProcess(string filename, string arguments, InfoType infoType)
         {
+
+            // Make sure the instance is running first. If it is, this call won't do any harm, aside from
+            // wasting some time.
+            var psi = new ProcessStartInfo()
+            {
+                FileName = filename,
+                Arguments = arguments,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                CreateNoWindow = true,
+                WindowStyle = ProcessWindowStyle.Hidden
+            };
+
+            var proc = Process.Start(psi);
+            string[] lines = proc.StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+
+            if (arguments == s_startLocalDbCommand)
+            {
+                if (proc.WaitForExit(milliseconds: 15))
+                {
+                    psi = new ProcessStartInfo()
+                    {
+                        FileName = filename,
+                        Arguments = s_sqlLocalDbInfo,
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        CreateNoWindow = true,
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+
+                    proc = Process.Start(psi);
+
+                    if (proc.WaitForExit(milliseconds: 15))
+                    {
+                        lines = proc.StandardOutput.ReadToEnd().Split(new string[] { Environment.NewLine }, StringSplitOptions.None);
+
+                    }
+                }
+                Assert.Equal(9, lines.Length);
+                if (infoType.Equals(InfoType.state))
+                {
+                    return lines[5].Split(':')[1].Trim();
+                }
+                else if (infoType.Equals(InfoType.pipeName))
+                {
+                    return lines[7].Split(new string[] { "Instance pipe name:" }, StringSplitOptions.None)[1].Trim();
+                }
+            }
+/*
             ProcessStartInfo sInfo = new()
             {
                 FileName = filename,
@@ -220,6 +270,7 @@ namespace Microsoft.Data.SqlClient.ManualTesting.Tests
             {
                 return lines[7].Split(new string[] { "Instance pipe name:" }, StringSplitOptions.None)[1].Trim();
             }
+*/
             return null;
         }
     }
