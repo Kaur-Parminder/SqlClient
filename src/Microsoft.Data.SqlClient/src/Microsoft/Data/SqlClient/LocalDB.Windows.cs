@@ -33,8 +33,7 @@ namespace Microsoft.Data.SqlClient
         private const int MAX_LOCAL_DB_CONNECTION_STRING_SIZE = 260;
         private IntPtr _startInstanceHandle = IntPtr.Zero;
         private static Lazy<string> s_sqlLocalDBExe = new Lazy<string>(() => GetPathToSqlLocalDB());
-        private static string LOCAL_DB_DOES_NOT_EXIST = "doesn't exist!";
-
+     
         // Local Db api doc https://msdn.microsoft.com/en-us/library/hh217143.aspx
         // HRESULT LocalDBStartInstance( [Input ] PCWSTR pInstanceName, [Input ] DWORD dwFlags,[Output] LPWSTR wszSqlConnection,[Input/Output] LPDWORD lpcchSqlConnection);
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -69,15 +68,11 @@ namespace Microsoft.Data.SqlClient
                 if (!TryGetLocalDBConnectionStringUsingSqlLocalDBExe(localDbInstance, timeout, out string connString, out string error))
                 {
                     SqlClientEventSource.Log.TryTraceEvent(ClassName, EventType.ERR, "Unable to to use SqlLocalDB.exe to get the ConnectionString.");
-                    //if database source does not exist
-                    if (error.Contains(LOCAL_DB_DOES_NOT_EXIST))
-                    {
-                        throw new Exception(error.Split(':')[1]);
-                    }
-                    else //rethrow
-                    {
-                        throw;
-                    }
+                    if (error != null)
+                        throw new Exception(error, ex);
+                    else
+                        throw new Exception("try sqllocaldb exe", ex);//localise new string
+
                 }
 
                 return connString;
